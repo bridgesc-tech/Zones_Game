@@ -1,0 +1,27 @@
+{
+  "name": "Zones - Turn-Based Card Game",
+  "short_name": "Zones",
+  "description": "A strategic turn-based card game. Play against AI or another player.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#181818",
+  "theme_color": "#181818",
+  "orientation": "portrait",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+
