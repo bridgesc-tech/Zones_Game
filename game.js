@@ -14,20 +14,39 @@ document.addEventListener('DOMContentLoaded', function() {
   canvas.width = BASE_WIDTH;
   canvas.height = BASE_HEIGHT;
 
+  // Store scale factor globally for touch coordinate conversion
+  let currentScale = 1;
+  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
   // Responsive canvas scaling function
   function resizeCanvas() {
     const container = gameContainer;
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
+    // Use actual viewport dimensions, accounting for mobile browser UI
+    const containerWidth = window.innerWidth || container.clientWidth;
+    const containerHeight = window.innerHeight || container.clientHeight;
     
     // Calculate scale to fit container while maintaining aspect ratio
     const scaleX = containerWidth / BASE_WIDTH;
     const scaleY = containerHeight / BASE_HEIGHT;
-    const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1x
+    // On mobile, allow scaling up to fill screen better (use full available space)
+    const scale = isMobile ? Math.min(scaleX, scaleY) : Math.min(scaleX, scaleY, 1);
+    currentScale = scale;
     
-    // Set display size (CSS)
-    canvas.style.width = (BASE_WIDTH * scale) + 'px';
-    canvas.style.height = (BASE_HEIGHT * scale) + 'px';
+    // Set display size (CSS) - fill available space on mobile
+    if (isMobile) {
+      // On mobile, use the larger dimension to fill screen better
+      const useWidth = scaleX >= scaleY;
+      if (useWidth) {
+        canvas.style.width = containerWidth + 'px';
+        canvas.style.height = (BASE_HEIGHT * scaleX) + 'px';
+      } else {
+        canvas.style.width = (BASE_WIDTH * scaleY) + 'px';
+        canvas.style.height = containerHeight + 'px';
+      }
+    } else {
+      canvas.style.width = (BASE_WIDTH * scale) + 'px';
+      canvas.style.height = (BASE_HEIGHT * scale) + 'px';
+    }
     
     // Keep internal resolution at base size for crisp rendering
     // The canvas will be scaled by CSS
@@ -35,7 +54,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Canvas resized:', {
       display: `${canvas.style.width} x ${canvas.style.height}`,
       logical: `${canvas.width} x ${canvas.height}`,
-      scale: scale.toFixed(2)
+      scale: scale.toFixed(2),
+      isMobile: isMobile,
+      viewport: `${containerWidth} x ${containerHeight}`
     });
   }
 
@@ -721,28 +742,61 @@ document.addEventListener('DOMContentLoaded', function() {
     if (event.touches.length === 1) {
       const touch = event.touches[0];
       const rect = canvas.getBoundingClientRect();
-      // Create a synthetic mouse event
+      // Convert touch coordinates to canvas logical coordinates
+      // Use actual canvas dimensions for accurate conversion
+      const scaleX = rect.width / BASE_WIDTH;
+      const scaleY = rect.height / BASE_HEIGHT;
+      const x = (touch.clientX - rect.left) / scaleX;
+      const y = (touch.clientY - rect.top) / scaleY;
+      
+      // Clamp to canvas bounds
+      const clampedX = Math.max(0, Math.min(BASE_WIDTH, x));
+      const clampedY = Math.max(0, Math.min(BASE_HEIGHT, y));
+      
+      // Create a synthetic mouse event with proper coordinate conversion
       const syntheticEvent = {
         clientX: touch.clientX,
         clientY: touch.clientY,
         pageX: touch.pageX,
-        pageY: touch.pageY
+        pageY: touch.pageY,
+        // Add converted coordinates for direct use
+        canvasX: clampedX,
+        canvasY: clampedY
       };
       handleCanvasClick(syntheticEvent);
     }
   }
 
   function handleTouchMove(event) {
+    event.preventDefault();
     if (event.touches.length === 1) {
       const touch = event.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      // Convert touch coordinates to canvas logical coordinates
+      const scaleX = rect.width / BASE_WIDTH;
+      const scaleY = rect.height / BASE_HEIGHT;
+      const x = (touch.clientX - rect.left) / scaleX;
+      const y = (touch.clientY - rect.top) / scaleY;
+      
+      // Clamp to canvas bounds
+      const clampedX = Math.max(0, Math.min(BASE_WIDTH, x));
+      const clampedY = Math.max(0, Math.min(BASE_HEIGHT, y));
+      
       const syntheticEvent = {
         clientX: touch.clientX,
         clientY: touch.clientY,
         pageX: touch.pageX,
-        pageY: touch.pageY
+        pageY: touch.pageY,
+        canvasX: clampedX,
+        canvasY: clampedY
       };
       handleCanvasMouseMove(syntheticEvent);
     }
+  }
+  
+  function handleTouchEnd(event) {
+    event.preventDefault();
+    hideTooltip();
   }
 
   // Mouse events
@@ -752,7 +806,8 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Touch events for mobile
   canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-  canvas.addEventListener('touchmove', handleTouchMove, { passive: true });
+  canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+  canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
   function drawCardFromDeck() {
     if (deck.length === 0) {
@@ -851,8 +906,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function handleCanvasClick(event) {
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    // Use converted coordinates if available (from touch), otherwise convert from mouse
+    let x, y;
+    if (event.canvasX !== undefined && event.canvasY !== undefined) {
+      x = event.canvasX;
+      y = event.canvasY;
+    } else {
+      // Mouse event - convert to canvas logical coordinates using actual canvas dimensions
+      const scaleX = rect.width / BASE_WIDTH;
+      const scaleY = rect.height / BASE_HEIGHT;
+      x = (event.clientX - rect.left) / scaleX;
+      y = (event.clientY - rect.top) / scaleY;
+    }
 
     // Hand arrow click detection (always allow)
     const hand = gameMode === 'pvp' ? (isPlayerTurn ? playerHand : player2Hand) : playerHand;
@@ -923,8 +988,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function handleCanvasMouseMove(event) {
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    // Use converted coordinates if available (from touch), otherwise convert from mouse
+    let x, y;
+    if (event.canvasX !== undefined && event.canvasY !== undefined) {
+      x = event.canvasX;
+      y = event.canvasY;
+    } else {
+      // Mouse event - convert to canvas logical coordinates using actual canvas dimensions
+      const scaleX = rect.width / BASE_WIDTH;
+      const scaleY = rect.height / BASE_HEIGHT;
+      x = (event.clientX - rect.left) / scaleX;
+      y = (event.clientY - rect.top) / scaleY;
+    }
     
     // Check if hovering over a hand card
     const hand = gameMode === 'pvp' ? (isPlayerTurn ? playerHand : player2Hand) : playerHand;
