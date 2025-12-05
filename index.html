@@ -94,16 +94,51 @@
   </div>
   <script src="game.js"></script>
   <script>
-    // Register Service Worker for PWA
+    // Register Service Worker for PWA with automatic update detection
     if ('serviceWorker' in navigator) {
+      let refreshing = false;
+      
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
           .then(reg => {
             console.log('Service Worker registered:', reg);
+            
+            // Check for updates every 60 seconds
+            setInterval(() => {
+              reg.update();
+            }, 60000);
+            
+            // Listen for service worker updates
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New service worker is available
+                  if (!refreshing) {
+                    refreshing = true;
+                    // Show update notification
+                    if (confirm('A new version of Zones is available! Reload to update?')) {
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      window.location.reload();
+                    } else {
+                      refreshing = false;
+                    }
+                  }
+                }
+              });
+            });
           })
           .catch(err => {
             console.log('Service Worker registration failed:', err);
           });
+        
+        // Listen for controller change (when new service worker takes over)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            window.location.reload();
+          }
+        });
       });
     }
 

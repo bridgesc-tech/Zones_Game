@@ -79,7 +79,22 @@ Then visit `http://localhost:8000`
 
 ### Service Worker Updates
 
-When updating the service worker, increment the `CACHE_VERSION` in `service-worker.js` to force cache updates.
+The app now has **automatic update detection**! When you push updates to GitHub:
+
+1. **For automatic updates**: Simply push your changes. The service worker will detect updates every 60 seconds and prompt users to reload.
+
+2. **For forced cache refresh**: Update the `CACHE_VERSION` constant in `service-worker.js` using semantic versioning (currently set to `"1.1.0"`). This forces all users to get the new version immediately.
+   
+   **Version format**: `"MAJOR.MINOR.PATCH"` (e.g., `"1.1.0"`, `"1.1.1"`, `"1.2.0"`, `"2.0.0"`)
+   - **PATCH** (1.1.0 → 1.1.1): Small bug fixes
+   - **MINOR** (1.1.0 → 1.2.0): New features, backward compatible
+   - **MAJOR** (1.1.0 → 2.0.0): Breaking changes
+
+**How it works:**
+- The service worker checks for updates every 60 seconds
+- When a new version is detected, users see a prompt to reload
+- The new version automatically replaces the old cached version
+- Old caches are automatically cleaned up
 
 ## File Structure
 
@@ -111,5 +126,6 @@ ZonesGame/
 - Improve mobile UI scaling
 - Add haptic feedback for mobile
 - Optimize performance for lower-end devices
+
 
 
