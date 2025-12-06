@@ -1,7 +1,7 @@
 // Service Worker for Zones Game PWA
 // Update CACHE_VERSION using semantic versioning (e.g., "1.1.0") when you want to force an update
 // Format: MAJOR.MINOR.PATCH (e.g., "1.0.0", "1.1.0", "1.2.3", "2.0.0")
-const CACHE_VERSION = "1.2.1";
+const CACHE_VERSION = "1.2.2";
 const CACHE_NAME = `zones-game-v${CACHE_VERSION}`;
 const urlsToCache = [
   './',
