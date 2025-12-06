@@ -40,18 +40,21 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Mobile-specific sizing constants
-  const CARD_WIDTH = isMobile ? 70 : 50;
-  const CARD_HEIGHT = isMobile ? 98 : 70; // Maintain 5:7 aspect ratio
-  const CARD_SPACING = isMobile ? 75 : 60; // Spacing between hand cards
-  const HAND_AREA_HEIGHT = isMobile ? 120 : 100; // Height reserved for hand area
-  const HEADER_HEIGHT = isMobile ? 50 : 40; // Header height
-  const ZONE_SPACING_MULTIPLIER = isMobile ? 0.9 : 1.0; // Slightly reduce spacing between zones on mobile
+  const CARD_WIDTH = isMobile ? 85 : 50; // Bigger cards on mobile for better visibility
+  const CARD_HEIGHT = isMobile ? 119 : 70; // Maintain 5:7 aspect ratio, bigger on mobile
+  const CARD_SPACING = isMobile ? 90 : 60; // Spacing between hand cards
+  const HAND_AREA_HEIGHT = isMobile ? 140 : 100; // Bigger hand area on mobile for larger cards
+  const HEADER_HEIGHT = isMobile ? 35 : 40; // Reduced header height on mobile to give more space to board
+  const ZONE_SPACING_MULTIPLIER = isMobile ? 1.0 : 1.0; // Full spacing on mobile now that we have more room
   const BUTTON_PADDING = isMobile ? '16px 32px' : '10px 20px';
   const BUTTON_FONT_SIZE = isMobile ? '20px' : '16px';
   
+  // Character circle size - bigger on mobile
+  const CHARACTER_RADIUS = isMobile ? 35 : 25; // Bigger characters on mobile
+  
   // Mobile-specific positioning adjustments (for better fit on small screens)
   const MOBILE_SIDE_PADDING = isMobile ? 5 : 0; // Small padding from left/right edges on mobile
-  const MOBILE_TOP_PADDING = isMobile ? 2 : 0; // Small padding from top on mobile
+  const MOBILE_TOP_PADDING = isMobile ? 0 : 0; // No extra top padding - we want to maximize board space
 
   // Responsive canvas scaling function
   function resizeCanvas() {
@@ -1131,9 +1134,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const pos = getCharacterPosition(side, zone, section, HEADER_HEIGHT);
             const cardX = pos.x;
             const cardY = pos.y;
-            if (x >= cardX && x <= cardX + CARD_WIDTH && y >= cardY && y <= cardY + CARD_HEIGHT) {
-              handleCharacterClick(side, zone, section);
-              return;
+            // For characters (circles), check if click is within the circle radius
+            // For hand cards, check if within card bounds
+            const isCharacter = card.hasOwnProperty('team') && typeof card.team === 'number';
+            if (isCharacter) {
+              const distance = Math.sqrt(Math.pow(x - cardX, 2) + Math.pow(y - cardY, 2));
+              if (distance <= CHARACTER_RADIUS) {
+                handleCharacterClick(side, zone, section);
+                return;
+              }
+            } else {
+              // Hand card click detection (though this shouldn't happen in board area)
+              if (x >= cardX && x <= cardX + CARD_WIDTH && y >= cardY && y <= cardY + CARD_HEIGHT) {
+                handleCharacterClick(side, zone, section);
+                return;
+              }
             }
           }
         }
@@ -2937,47 +2952,54 @@ document.addEventListener('DOMContentLoaded', function() {
       const colors = ['#ff4444', '#44ff44', '#4444ff']; // Red, Green, Blue
       const colorIndex = card.team;
       useCtx.save();
-      // Draw circle centered at (x, y)
+      // Draw circle centered at (x, y) - use mobile-aware radius
       useCtx.beginPath();
-      useCtx.arc(x, y, 25, 0, Math.PI * 2);
+      useCtx.arc(x, y, CHARACTER_RADIUS, 0, Math.PI * 2);
       useCtx.fillStyle = colors[colorIndex];
       useCtx.fill();
       // Only highlight if selected
       if (isSelected) {
         useCtx.strokeStyle = '#FFD700'; // Gold for selected
-        useCtx.lineWidth = 3;
+        useCtx.lineWidth = isMobile ? 4 : 3;
         useCtx.shadowColor = '#FFD700';
         useCtx.shadowBlur = 10;
       } else {
         useCtx.strokeStyle = '#fff';
-        useCtx.lineWidth = 1;
+        useCtx.lineWidth = isMobile ? 2 : 1;
       }
       useCtx.stroke();
       useCtx.restore();
       
-      // Draw player stats (only DEF), centered
+      // Draw player stats (only DEF), centered - scale font with character size
       useCtx.fillStyle = '#000';
-      useCtx.font = '10px Arial';
+      useCtx.font = isMobile ? 'bold 14px Arial' : '10px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('DEF', x, y - 8);
-      useCtx.font = 'bold 20px Arial';
-      useCtx.fillText(card.def, x, y + 10);
+      const defLabelY = isMobile ? y - (CHARACTER_RADIUS * 0.4) : y - 8;
+      useCtx.fillText('DEF', x, defLabelY);
+      useCtx.font = isMobile ? 'bold 28px Arial' : 'bold 20px Arial';
+      const defValueY = isMobile ? y + (CHARACTER_RADIUS * 0.4) : y + 10;
+      useCtx.fillText(card.def, x, defValueY);
 
       // Draw temp attack boost if it exists
       if (card.tempAttackBoost) {
         useCtx.fillStyle = '#ff4444';
-        useCtx.font = 'bold 18px Arial';
+        useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 18px Arial';
         useCtx.textAlign = 'left';
-        useCtx.fillText(`+${card.tempAttackBoost}`, x - 50, y + 8);
+        const boostOffsetX = isMobile ? x - (CHARACTER_RADIUS * 1.5) : x - 50;
+        const boostOffsetY = isMobile ? y + (CHARACTER_RADIUS * 0.3) : y + 8;
+        useCtx.fillText(`+${card.tempAttackBoost}`, boostOffsetX, boostOffsetY);
       }
 
       // Draw taunt icons for taunt stacks
       let buffIconOffset = 0;
       if (card.taunt) {
         const tauntStacks = typeof card.taunt === 'number' ? card.taunt : 1;
+        const iconSize = isMobile ? 12 : 8;
+        const iconOffsetX = isMobile ? CHARACTER_RADIUS + 10 : 35;
+        const iconSpacing = isMobile ? 22 : 18;
         for (let i = 0; i < tauntStacks; i++) {
-          drawTargetIcon(useCtx, x + 35 + buffIconOffset, y, 8);
-          buffIconOffset += 18;
+          drawTargetIcon(useCtx, x + iconOffsetX + buffIconOffset, y, iconSize);
+          buffIconOffset += iconSpacing;
         }
       }
 
@@ -2985,50 +3007,56 @@ document.addEventListener('DOMContentLoaded', function() {
       if (card.agility) {
         useCtx.save();
         useCtx.strokeStyle = '#ffcc00';
-        useCtx.lineWidth = 2;
+        useCtx.lineWidth = isMobile ? 3 : 2;
         useCtx.shadowColor = '#ffcc00';
         useCtx.shadowBlur = 4;
         // Draw a small lightning bolt to the right of the character, after taunt icons
-        const iconX = x + 35 + buffIconOffset;
+        const iconOffsetX = isMobile ? CHARACTER_RADIUS + 10 : 35;
+        const iconX = x + iconOffsetX + buffIconOffset;
         const iconY = y;
+        const iconScale = isMobile ? 1.5 : 1;
         useCtx.beginPath();
-        useCtx.moveTo(iconX - 4, iconY - 6);
-        useCtx.lineTo(iconX + 2, iconY + 2);
-        useCtx.lineTo(iconX - 2, iconY + 2);
-        useCtx.lineTo(iconX + 4, iconY + 10);
+        useCtx.moveTo(iconX - (4 * iconScale), iconY - (6 * iconScale));
+        useCtx.lineTo(iconX + (2 * iconScale), iconY + (2 * iconScale));
+        useCtx.lineTo(iconX - (2 * iconScale), iconY + (2 * iconScale));
+        useCtx.lineTo(iconX + (4 * iconScale), iconY + (10 * iconScale));
         useCtx.stroke();
         useCtx.restore();
-        buffIconOffset += 18;
+        buffIconOffset += isMobile ? 22 : 18;
       }
 
       // Draw counter icons for each stack
       if (card.counter && card.counter > 0) {
+        const iconOffsetX = isMobile ? CHARACTER_RADIUS + 10 : 35;
+        const iconSize = isMobile ? 12 : 8;
+        const iconSpacing = isMobile ? 22 : 18;
         for (let i = 0; i < card.counter; i++) {
-          const iconX = x + 35 + buffIconOffset;
+          const iconX = x + iconOffsetX + buffIconOffset;
           const iconY = y;
           useCtx.save();
           useCtx.translate(iconX, iconY);
           useCtx.rotate(-Math.PI / 4);
           useCtx.beginPath();
-          useCtx.arc(0, 0, 8, 0, Math.PI * 1.5, false);
+          useCtx.arc(0, 0, iconSize, 0, Math.PI * 1.5, false);
           useCtx.strokeStyle = '#3399ff';
-          useCtx.lineWidth = 2;
+          useCtx.lineWidth = isMobile ? 3 : 2;
+          useCtx.stroke();
+          const arrowScale = isMobile ? 1.5 : 1;
+          useCtx.beginPath();
+          useCtx.moveTo(5 * arrowScale, -5 * arrowScale);
+          useCtx.lineTo(9 * arrowScale, -5 * arrowScale);
+          useCtx.lineTo(5 * arrowScale, -1 * arrowScale);
           useCtx.stroke();
           useCtx.beginPath();
-          useCtx.moveTo(5, -5);
-          useCtx.lineTo(9, -5);
-          useCtx.lineTo(5, -1);
+          useCtx.arc(0, 0, iconSize, Math.PI, Math.PI * 2.5, false);
           useCtx.stroke();
           useCtx.beginPath();
-          useCtx.arc(0, 0, 8, Math.PI, Math.PI * 2.5, false);
-          useCtx.stroke();
-          useCtx.beginPath();
-          useCtx.moveTo(-5, 5);
-          useCtx.lineTo(-9, 5);
-          useCtx.lineTo(-5, 1);
+          useCtx.moveTo(-5 * arrowScale, 5 * arrowScale);
+          useCtx.lineTo(-9 * arrowScale, 5 * arrowScale);
+          useCtx.lineTo(-5 * arrowScale, 1 * arrowScale);
           useCtx.stroke();
           useCtx.restore();
-          buffIconOffset += 18;
+          buffIconOffset += iconSpacing;
         }
       }
     } else if (card.type === 'AttackDefense') {
@@ -3752,16 +3780,17 @@ document.addEventListener('DOMContentLoaded', function() {
     helpButton.id = 'help-btn';
     helpButton.textContent = 'Help';
     helpButton.style.position = 'absolute';
-    helpButton.style.left = '20px';
-    helpButton.style.top = '20px';
-    helpButton.style.padding = '10px 20px';
-    helpButton.style.fontSize = '16px';
+    helpButton.style.left = isMobile ? '10px' : '20px';
+    helpButton.style.top = isMobile ? '45px' : '20px'; // Moved down on mobile to be below header
+    helpButton.style.padding = isMobile ? '12px 24px' : '10px 20px';
+    helpButton.style.fontSize = isMobile ? '18px' : '16px';
     helpButton.style.backgroundColor = '#2196F3';
     helpButton.style.color = 'white';
     helpButton.style.border = 'none';
     helpButton.style.borderRadius = '5px';
     helpButton.style.cursor = 'pointer';
     helpButton.style.zIndex = '1000';
+    helpButton.style.touchAction = 'manipulation'; // Better touch handling on mobile
     gameContainer.appendChild(helpButton);
     helpButton.onclick = function() {
       showHelpWindow();
@@ -3948,11 +3977,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const baseZoneHeight = playAreaHeight / ZONES;
     
     // Calculate x position (centered in section, with mobile side padding)
-    const x = MOBILE_SIDE_PADDING + (section * sectionWidth) + (sectionWidth / 2) - (CARD_WIDTH / 2);
+    // For characters, we center the circle, not the card
+    const x = MOBILE_SIDE_PADDING + (section * sectionWidth) + (sectionWidth / 2);
     
     // Calculate y position (centered in zone, accounting for header and top padding)
+    // Characters should be in the middle of each zone, not on the lines
     const zoneStartY = actualHeaderHeight + MOBILE_TOP_PADDING + (zone * baseZoneHeight);
-    const y = zoneStartY + (baseZoneHeight / 2) - (CARD_HEIGHT / 2);
+    const y = zoneStartY + (baseZoneHeight / 2);
     
     return { x, y };
   }
