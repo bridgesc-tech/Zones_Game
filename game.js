@@ -51,76 +51,105 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Responsive canvas scaling function
   function resizeCanvas() {
-    const container = gameContainer;
-    // Use actual viewport dimensions, accounting for mobile browser UI
-    // On mobile, use the larger of innerHeight or clientHeight to account for browser UI
-    let containerWidth = window.innerWidth || container.clientWidth || document.documentElement.clientWidth;
-    let containerHeight = window.innerHeight || container.clientHeight || document.documentElement.clientHeight;
-    
-    // On mobile, try to get the most accurate viewport height
-    if (isMobile) {
-      // Use visual viewport if available (better for mobile browsers)
-      if (window.visualViewport) {
-        containerWidth = window.visualViewport.width;
-        containerHeight = window.visualViewport.height;
+    try {
+      const container = gameContainer;
+      if (!container || !canvas) {
+        console.error('Container or canvas not found');
+        return;
       }
-      // Fallback: use the maximum available height
-      containerHeight = Math.max(containerHeight, window.innerHeight || 0);
-    }
-    
-    if (isMobile) {
-      // Mobile: Scale to fit the entire viewport, use minimal padding
-      const mobilePadding = 5; // Reduced padding to maximize space
-      const availableWidth = containerWidth - (mobilePadding * 2);
-      const availableHeight = containerHeight - (mobilePadding * 2);
       
-      // Calculate scale to fit with padding while maintaining aspect ratio
-      const scaleX = availableWidth / BASE_WIDTH;
-      const scaleY = availableHeight / BASE_HEIGHT;
-      const scale = Math.min(scaleX, scaleY);
-      currentScale = scale;
+      // Use actual viewport dimensions, accounting for mobile browser UI
+      // On mobile, use the larger of innerHeight or clientHeight to account for browser UI
+      let containerWidth = window.innerWidth || container.clientWidth || document.documentElement.clientWidth;
+      let containerHeight = window.innerHeight || container.clientHeight || document.documentElement.clientHeight;
       
-      // Set display size with padding
-      const displayWidth = BASE_WIDTH * scale;
-      const displayHeight = BASE_HEIGHT * scale;
+      // On mobile, try to get the most accurate viewport height
+      if (isMobile) {
+        // Use visual viewport if available (better for mobile browsers)
+        try {
+          if (window.visualViewport && window.visualViewport.width > 0 && window.visualViewport.height > 0) {
+            containerWidth = window.visualViewport.width;
+            containerHeight = window.visualViewport.height;
+          }
+        } catch (e) {
+          console.warn('visualViewport access failed:', e);
+        }
+        // Fallback: use the maximum available height
+        containerHeight = Math.max(containerHeight, window.innerHeight || 0, document.documentElement.clientHeight || 0);
+      }
       
-      canvas.style.width = displayWidth + 'px';
-      canvas.style.height = displayHeight + 'px';
-      canvas.style.margin = `${mobilePadding}px auto`;
-      canvas.style.display = 'block'; // Ensure canvas is visible
+      // Ensure we have valid dimensions
+      if (!containerWidth || !containerHeight || containerWidth <= 0 || containerHeight <= 0) {
+        console.warn('Invalid container dimensions, using defaults');
+        containerWidth = window.innerWidth || 900;
+        containerHeight = window.innerHeight || 700;
+      }
       
-      console.log('Canvas resized (mobile):', {
-        display: `${displayWidth.toFixed(0)} x ${displayHeight.toFixed(0)}`,
-        logical: `${canvas.width} x ${canvas.height}`,
-        scale: scale.toFixed(3),
-        viewport: `${containerWidth} x ${containerHeight}`,
-        padding: mobilePadding,
-        isMobile: isMobile
-      });
-    } else {
-      // Desktop: Maintain aspect ratio, don't scale beyond 1:1
-      const scaleX = containerWidth / BASE_WIDTH;
-      const scaleY = containerHeight / BASE_HEIGHT;
-      const scale = Math.min(scaleX, scaleY, 1);
-      currentScale = scale;
+      if (isMobile) {
+        // Mobile: Scale to fit the entire viewport, use minimal padding
+        const mobilePadding = 5; // Reduced padding to maximize space
+        const availableWidth = containerWidth - (mobilePadding * 2);
+        const availableHeight = containerHeight - (mobilePadding * 2);
+        
+        // Calculate scale to fit with padding while maintaining aspect ratio
+        const scaleX = availableWidth / BASE_WIDTH;
+        const scaleY = availableHeight / BASE_HEIGHT;
+        const scale = Math.min(scaleX, scaleY);
+        currentScale = scale;
+        
+        // Set display size with padding
+        const displayWidth = BASE_WIDTH * scale;
+        const displayHeight = BASE_HEIGHT * scale;
+        
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = displayHeight + 'px';
+        canvas.style.margin = `${mobilePadding}px auto`;
+        canvas.style.display = 'block'; // Ensure canvas is visible
+        
+        console.log('Canvas resized (mobile):', {
+          display: `${displayWidth.toFixed(0)} x ${displayHeight.toFixed(0)}`,
+          logical: `${canvas.width} x ${canvas.height}`,
+          scale: scale.toFixed(3),
+          viewport: `${containerWidth} x ${containerHeight}`,
+          padding: mobilePadding,
+          isMobile: isMobile
+        });
+      } else {
+        // Desktop: Maintain aspect ratio, don't scale beyond 1:1
+        const scaleX = containerWidth / BASE_WIDTH;
+        const scaleY = containerHeight / BASE_HEIGHT;
+        const scale = Math.min(scaleX, scaleY, 1);
+        currentScale = scale;
+        
+        canvas.style.width = (BASE_WIDTH * scale) + 'px';
+        canvas.style.height = (BASE_HEIGHT * scale) + 'px';
+        canvas.style.margin = '0 auto';
+        
+        console.log('Canvas resized (desktop):', {
+          display: `${(BASE_WIDTH * scale).toFixed(0)} x ${(BASE_HEIGHT * scale).toFixed(0)}`,
+          logical: `${canvas.width} x ${canvas.height}`,
+          scale: scale.toFixed(2),
+          viewport: `${containerWidth} x ${containerHeight}`
+        });
+      }
       
-      canvas.style.width = (BASE_WIDTH * scale) + 'px';
-      canvas.style.height = (BASE_HEIGHT * scale) + 'px';
-      canvas.style.margin = '0 auto';
-      
-      console.log('Canvas resized (desktop):', {
-        display: `${(BASE_WIDTH * scale).toFixed(0)} x ${(BASE_HEIGHT * scale).toFixed(0)}`,
-        logical: `${canvas.width} x ${canvas.height}`,
-        scale: scale.toFixed(2),
-        viewport: `${containerWidth} x ${containerHeight}`
-      });
-    }
-    
-    // Keep internal resolution at base size for crisp rendering
-    // The canvas will be scaled by CSS
-    // Force a redraw after resize
-    if (typeof drawBoard === 'function') {
-      drawBoard();
+      // Keep internal resolution at base size for crisp rendering
+      // The canvas will be scaled by CSS
+      // Force a redraw after resize (only if drawBoard is defined)
+      if (typeof drawBoard === 'function') {
+        try {
+          drawBoard();
+        } catch (e) {
+          console.warn('drawBoard error during resize:', e);
+        }
+      }
+    } catch (error) {
+      console.error('Error in resizeCanvas:', error);
+      // Fallback: set basic canvas size
+      if (canvas) {
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+      }
     }
   }
 
@@ -134,9 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // On mobile, also listen to visualViewport changes for better accuracy
-  if (isMobile && window.visualViewport) {
-    window.visualViewport.addEventListener('resize', resizeCanvas);
-    window.visualViewport.addEventListener('scroll', resizeCanvas);
+  if (isMobile) {
+    try {
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', resizeCanvas);
+        window.visualViewport.addEventListener('scroll', resizeCanvas);
+      }
+    } catch (e) {
+      console.warn('Could not attach visualViewport listeners:', e);
+    }
   }
 
   console.log('Canvas dimensions:', canvas.width, canvas.height);
