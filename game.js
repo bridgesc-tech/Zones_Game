@@ -1,4 +1,4 @@
-console.log("VERSION CHECK: 9");
+console.log("VERSION CHECK: 10");
 // Zones - Turn-Based Card Game
 
 // Wait for the DOM to be fully loaded
@@ -2862,7 +2862,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw turn indicator
     ctx.save();
-    ctx.font = isMobile ? 'bold 28px Arial' : 'bold 24px Arial';
+    ctx.font = isMobile ? 'bold 40px Arial' : 'bold 24px Arial'; // Increased from 28px to 40px on mobile
     ctx.textAlign = 'center';
     const turnIndicatorY = isMobile ? 50 : 35; // Positioned just below help button on mobile
     if (!firstTurn) {  // Only show turn indicator after game has started
@@ -2886,7 +2886,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw Turn Counter
     ctx.save();
-    ctx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
+    ctx.font = isMobile ? 'bold 36px Arial' : 'bold 20px Arial'; // Increased from 24px to 36px on mobile
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'right';
     const turnCounterText = `Turn: ${playerTurns} / ${MAX_TURNS}`;
@@ -2991,18 +2991,18 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Draw player stats (only DEF), centered - scale font with character size
       useCtx.fillStyle = '#000';
-      useCtx.font = isMobile ? 'bold 14px Arial' : '10px Arial';
+      useCtx.font = isMobile ? 'bold 20px Arial' : '10px Arial'; // Increased from 14px to 20px on mobile
       useCtx.textAlign = 'center';
       const defLabelY = isMobile ? y - (CHARACTER_RADIUS * 0.4) : y - 8;
       useCtx.fillText('DEF', x, defLabelY);
-      useCtx.font = isMobile ? 'bold 28px Arial' : 'bold 20px Arial';
+      useCtx.font = isMobile ? 'bold 40px Arial' : 'bold 20px Arial'; // Increased from 28px to 40px on mobile
       const defValueY = isMobile ? y + (CHARACTER_RADIUS * 0.4) : y + 10;
       useCtx.fillText(card.def, x, defValueY);
 
       // Draw temp attack boost if it exists
       if (card.tempAttackBoost) {
         useCtx.fillStyle = '#ff4444';
-        useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 18px Arial';
+        useCtx.font = isMobile ? 'bold 32px Arial' : 'bold 18px Arial'; // Increased from 24px to 32px on mobile
         useCtx.textAlign = 'left';
         const boostOffsetX = isMobile ? x - (CHARACTER_RADIUS * 1.5) : x - 50;
         const boostOffsetY = isMobile ? y + (CHARACTER_RADIUS * 0.3) : y + 8;
@@ -3111,7 +3111,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Draw only the numbers, styled like Taunt
       useCtx.fillStyle = '#fff'; // White text
-      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 28px Arial'; // Increased from 36px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText(`${card.attackValue}/${card.defenseValue}`, x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
       useCtx.restore();
@@ -3137,7 +3137,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Draw '3's, styled like split cards
       useCtx.fillStyle = '#fff';
-      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 28px Arial'; // Increased from 36px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('3', x + CARD_WIDTH / 4, y + CARD_HEIGHT / 2);
       useCtx.fillText('3', x + CARD_WIDTH * 3 / 4, y + CARD_HEIGHT / 2);
@@ -3165,7 +3165,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Draw '2's, styled like split cards
       useCtx.fillStyle = '#fff';
-      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 28px Arial'; // Increased from 36px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('2', x + CARD_WIDTH / 6, y + CARD_HEIGHT / 2);
       useCtx.fillText('2', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
@@ -3190,7 +3190,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Draw card info
       useCtx.fillStyle = '#00FF00'; // Green text (match Fortify)
-      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 28px Arial'; // Increased from 36px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('+5', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2); // Match Fortify/Counter Assault vertical position
       
@@ -3229,7 +3229,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Draw card info: 50 on top, -? on bottom (match Endeavor)
       useCtx.fillStyle = '#ff4444'; // Red text
-      useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 20px Arial'; // Increased from 24px to 36px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('50', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.25);
       useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.85);
@@ -3239,7 +3239,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.fillStyle = '#111'; // Black
       useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.fillStyle = '#00FF00';
-      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 28px Arial'; // Increased from 36px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('+10', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
       // Draw two centered taunt icons at the bottom
@@ -3281,7 +3281,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.fill();
       // Blue '+?' text
       useCtx.fillStyle = '#3399ff';
-      useCtx.font = isMobile ? 'bold 40px Arial' : 'bold 32px Arial'; // Match Counter Assault
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 32px Arial'; // Increased from 40px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('+?', centerX, y + CARD_HEIGHT / 2);
       // Counter icon: two arrows circling each other (simple version)
@@ -3334,7 +3334,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Red '5' text
       useCtx.fillStyle = '#ff4444';
-      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial'; // Match Fortify and Taunt
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 28px Arial'; // Increased from 36px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('5', centerX, y + CARD_HEIGHT / 2);
 
@@ -3381,7 +3381,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.fill();
       // Green text
       useCtx.fillStyle = '#44ff44';
-      useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 20px Arial'; // Increased from 24px to 36px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('-?/5-5', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
       // Draw taunt icon
@@ -3419,7 +3419,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.fill();
       // Blue -? text
       useCtx.fillStyle = '#3399ff';
-      useCtx.font = isMobile ? 'bold 40px Arial' : 'bold 32px Arial';
+      useCtx.font = isMobile ? 'bold 50px Arial' : 'bold 32px Arial'; // Increased from 40px to 50px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
       // Two counter icons (bottom left and bottom right)
@@ -3495,7 +3495,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.fillRect(x + CARD_WIDTH * 0.2, y + CARD_HEIGHT * 0.54, CARD_WIDTH * 0.6, CARD_HEIGHT * 0.086);
       // Red -? at top and bottom
       useCtx.fillStyle = '#ff4444';
-      useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 20px Arial'; // Increased from 24px to 36px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.29);
       useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.89);
@@ -3522,7 +3522,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.fillRect(x + CARD_WIDTH * 0.2, y + CARD_HEIGHT * 0.54, CARD_WIDTH * 0.6, CARD_HEIGHT * 0.086);
       // Red -? | -? at top and bottom
       useCtx.fillStyle = '#ff4444';
-      useCtx.font = isMobile ? 'bold 22px Arial' : 'bold 18px Arial';
+      useCtx.font = isMobile ? 'bold 32px Arial' : 'bold 18px Arial'; // Increased from 22px to 32px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText('-? | -?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.29);
       useCtx.fillText('-? | -?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.89);
@@ -3563,7 +3563,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Draw card info
       useCtx.fillStyle = '#fff';
-      useCtx.font = isMobile ? '16px Arial' : '12px Arial';
+      useCtx.font = isMobile ? '24px Arial' : '12px Arial'; // Increased from 16px to 24px on mobile
       useCtx.textAlign = 'center';
       useCtx.fillText(card.type, x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.36);
       useCtx.fillText(card.value, x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.64);
@@ -3603,14 +3603,17 @@ document.addEventListener('DOMContentLoaded', function() {
     handLeftArrowBox = null;
     handRightArrowBox = null;
     if (handScrollOffset > 0) {
+      // Draw left arrow at a fixed position from the left edge, not relative to x
+      // This ensures it's always visible when scrolled
+      const leftArrowX = isMobile ? 10 : 40; // Fixed position from left edge
       ctx.fillStyle = '#888';
       ctx.beginPath();
-      ctx.moveTo(x - arrowWidth, arrowY);
-      ctx.lineTo(x - 5, arrowY - arrowSize / 2);
-      ctx.lineTo(x - 5, arrowY + arrowSize / 2);
+      ctx.moveTo(leftArrowX, arrowY);
+      ctx.lineTo(leftArrowX + arrowWidth, arrowY - arrowSize / 2);
+      ctx.lineTo(leftArrowX + arrowWidth, arrowY + arrowSize / 2);
       ctx.closePath();
       ctx.fill();
-      handLeftArrowBox = { x: x - arrowWidth - 5, y: arrowY - arrowSize / 2, w: arrowWidth + 5, h: arrowSize };
+      handLeftArrowBox = { x: leftArrowX, y: arrowY - arrowSize / 2, w: arrowWidth + 5, h: arrowSize };
     }
     if (handScrollOffset < hand.length - maxVisible) {
       ctx.fillStyle = '#888';
