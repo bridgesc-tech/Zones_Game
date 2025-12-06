@@ -1,4 +1,4 @@
-console.log("VERSION CHECK: 4");
+console.log("VERSION CHECK: 5");
 // Zones - Turn-Based Card Game
 
 // Wait for the DOM to be fully loaded
@@ -737,13 +737,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
   // Touch event handlers that convert touch to mouse-like events
+  let touchStartPos = null;
+  let touchMoved = false;
+  const TOUCH_MOVE_THRESHOLD = 10; // pixels - if touch moves more than this, it's a drag, not a tap
+
   function handleTouchStart(event) {
-    event.preventDefault();
+    // Only prevent default if it's a single touch (allow multi-touch gestures like pinch-zoom to work)
     if (event.touches.length === 1) {
+      event.preventDefault();
+      event.stopPropagation();
+      
       const touch = event.touches[0];
       const rect = canvas.getBoundingClientRect();
-      // Convert touch coordinates to canvas logical coordinates
-      // Use actual canvas dimensions for accurate conversion
+      // Store initial touch position
+      touchStartPos = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        rect: rect
+      };
+      touchMoved = false;
+      
+      // Convert touch coordinates to canvas logical coordinates for hover
       const scaleX = rect.width / BASE_WIDTH;
       const scaleY = rect.height / BASE_HEIGHT;
       const x = (touch.clientX - rect.left) / scaleX;
@@ -753,24 +767,32 @@ document.addEventListener('DOMContentLoaded', function() {
       const clampedX = Math.max(0, Math.min(BASE_WIDTH, x));
       const clampedY = Math.max(0, Math.min(BASE_HEIGHT, y));
       
-      // Create a synthetic mouse event with proper coordinate conversion
       const syntheticEvent = {
         clientX: touch.clientX,
         clientY: touch.clientY,
         pageX: touch.pageX,
         pageY: touch.pageY,
-        // Add converted coordinates for direct use
         canvasX: clampedX,
         canvasY: clampedY
       };
-      handleCanvasClick(syntheticEvent);
+      handleCanvasMouseMove(syntheticEvent);
     }
   }
 
   function handleTouchMove(event) {
-    event.preventDefault();
-    if (event.touches.length === 1) {
+    if (event.touches.length === 1 && touchStartPos) {
+      event.preventDefault();
+      event.stopPropagation();
+      
       const touch = event.touches[0];
+      
+      // Check if touch has moved significantly (drag vs tap)
+      const deltaX = Math.abs(touch.clientX - touchStartPos.clientX);
+      const deltaY = Math.abs(touch.clientY - touchStartPos.clientY);
+      if (deltaX > TOUCH_MOVE_THRESHOLD || deltaY > TOUCH_MOVE_THRESHOLD) {
+        touchMoved = true;
+      }
+      
       const rect = canvas.getBoundingClientRect();
       // Convert touch coordinates to canvas logical coordinates
       const scaleX = rect.width / BASE_WIDTH;
@@ -795,7 +817,47 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function handleTouchEnd(event) {
-    event.preventDefault();
+    // Only trigger click if it was a tap (not a drag)
+    if (touchStartPos && !touchMoved && event.changedTouches.length === 1) {
+      const touch = event.changedTouches[0];
+      // Use current rect (not stored one) in case canvas moved/resized
+      const rect = canvas.getBoundingClientRect();
+      
+      // Convert touch coordinates to canvas logical coordinates
+      const scaleX = rect.width / BASE_WIDTH;
+      const scaleY = rect.height / BASE_HEIGHT;
+      const x = (touch.clientX - rect.left) / scaleX;
+      const y = (touch.clientY - rect.top) / scaleY;
+      
+      // Clamp to canvas bounds
+      const clampedX = Math.max(0, Math.min(BASE_WIDTH, x));
+      const clampedY = Math.max(0, Math.min(BASE_HEIGHT, y));
+      
+      // Create a synthetic mouse event with proper coordinate conversion
+      const syntheticEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        pageX: touch.pageX,
+        pageY: touch.pageY,
+        // Add converted coordinates for direct use
+        canvasX: clampedX,
+        canvasY: clampedY
+      };
+      
+      // Prevent default to avoid double-tap zoom and other browser behaviors
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // Trigger the click handler
+      handleCanvasClick(syntheticEvent);
+    } else {
+      // Still prevent default even if not a click to avoid unwanted behaviors
+      event.preventDefault();
+    }
+    
+    // Reset touch tracking
+    touchStartPos = null;
+    touchMoved = false;
     hideTooltip();
   }
 
