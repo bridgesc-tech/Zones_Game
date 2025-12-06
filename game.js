@@ -45,9 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const CARD_SPACING = isMobile ? 75 : 60; // Spacing between hand cards
   const HAND_AREA_HEIGHT = isMobile ? 120 : 100; // Height reserved for hand area
   const HEADER_HEIGHT = isMobile ? 50 : 40; // Header height
-  const ZONE_SPACING_MULTIPLIER = isMobile ? 0.85 : 1.0; // Reduce spacing between zones on mobile
+  const ZONE_SPACING_MULTIPLIER = isMobile ? 0.9 : 1.0; // Slightly reduce spacing between zones on mobile
   const BUTTON_PADDING = isMobile ? '16px 32px' : '10px 20px';
   const BUTTON_FONT_SIZE = isMobile ? '20px' : '16px';
+  
+  // Mobile-specific positioning adjustments (for better fit on small screens)
+  const MOBILE_SIDE_PADDING = isMobile ? 5 : 0; // Small padding from left/right edges on mobile
+  const MOBILE_TOP_PADDING = isMobile ? 2 : 0; // Small padding from top on mobile
 
   // Responsive canvas scaling function
   function resizeCanvas() {
@@ -3932,12 +3936,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Helper to get character draw position for 6 zones and 3 sections
   function getCharacterPosition(side, zone, section, headerHeight = 80) {
-    const sectionWidth = canvas.width / SECTIONS;
-    const playAreaHeight = canvas.height - HAND_AREA_HEIGHT - headerHeight;
+    // Use the mobile-aware header height if not explicitly provided
+    const actualHeaderHeight = (headerHeight === 80 || headerHeight === 40) ? HEADER_HEIGHT : headerHeight;
+    
+    // Calculate available width (accounting for mobile padding)
+    const availableWidth = canvas.width - (MOBILE_SIDE_PADDING * 2);
+    const sectionWidth = availableWidth / SECTIONS;
+    
+    // Calculate play area height (accounting for header and hand area)
+    const playAreaHeight = canvas.height - HAND_AREA_HEIGHT - actualHeaderHeight - (MOBILE_TOP_PADDING * 2);
     const baseZoneHeight = playAreaHeight / ZONES;
-    const zoneHeight = baseZoneHeight * ZONE_SPACING_MULTIPLIER;
-    const x = section * sectionWidth + sectionWidth / 2 - (CARD_WIDTH / 2);
-    const y = headerHeight + (zone * baseZoneHeight + baseZoneHeight / 2) - (CARD_HEIGHT / 2);
+    
+    // Calculate x position (centered in section, with mobile side padding)
+    const x = MOBILE_SIDE_PADDING + (section * sectionWidth) + (sectionWidth / 2) - (CARD_WIDTH / 2);
+    
+    // Calculate y position (centered in zone, accounting for header and top padding)
+    const zoneStartY = actualHeaderHeight + MOBILE_TOP_PADDING + (zone * baseZoneHeight);
+    const y = zoneStartY + (baseZoneHeight / 2) - (CARD_HEIGHT / 2);
+    
     return { x, y };
   }
 
