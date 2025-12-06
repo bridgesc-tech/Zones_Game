@@ -1,4 +1,4 @@
-console.log("VERSION CHECK: 8");
+console.log("VERSION CHECK: 9");
 // Zones - Turn-Based Card Game
 
 // Wait for the DOM to be fully loaded
@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
   let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                  (window.innerWidth <= 768 || (window.screen && window.screen.width <= 768));
   // Use taller canvas on mobile to give zones more vertical space
-  const BASE_HEIGHT = isMobile ? 1100 : 700; // Increased height on mobile for better zone spacing
+  // Increased significantly to ensure zones are visibly taller even after scaling
+  const BASE_HEIGHT = isMobile ? 1300 : 700; // Much taller on mobile (1300 vs 700 = 1.86x)
   canvas.width = BASE_WIDTH;
   canvas.height = BASE_HEIGHT;
 
@@ -94,14 +95,16 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       if (isMobile) {
-        // Mobile: Scale to fit the entire viewport, use minimal padding
+        // Mobile: Use full viewport height to show the taller canvas
         const mobilePadding = 5; // Reduced padding to maximize space
         const availableWidth = containerWidth - (mobilePadding * 2);
         const availableHeight = containerHeight - (mobilePadding * 2);
         
-        // Calculate scale to fit with padding while maintaining aspect ratio
+        // Calculate scale - fit to height first to show taller zones
         const scaleX = availableWidth / BASE_WIDTH;
         const scaleY = availableHeight / BASE_HEIGHT;
+        // On mobile, prioritize showing the full height of the taller canvas
+        // Use scaleY to fit height, but cap at scaleX to not exceed width
         const scale = Math.min(scaleX, scaleY);
         currentScale = scale;
         
@@ -117,7 +120,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Canvas resized (mobile):', {
           display: `${displayWidth.toFixed(0)} x ${displayHeight.toFixed(0)}`,
           logical: `${canvas.width} x ${canvas.height}`,
+          BASE_HEIGHT: BASE_HEIGHT,
           scale: scale.toFixed(3),
+          scaleX: scaleX.toFixed(3),
+          scaleY: scaleY.toFixed(3),
           viewport: `${containerWidth} x ${containerHeight}`,
           padding: mobilePadding,
           isMobile: isMobile
@@ -183,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   console.log('Canvas dimensions:', canvas.width, canvas.height);
+  console.log('BASE_HEIGHT:', BASE_HEIGHT, 'isMobile:', isMobile);
   console.log('Game container:', gameContainer);
 
   // Check Firebase availability
@@ -2834,6 +2841,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerHeight = HEADER_HEIGHT; // Use mobile-aware constant
     const playAreaHeight = canvas.height - HAND_AREA_HEIGHT - headerHeight;
     const zoneHeight = (playAreaHeight / ZONES) * ZONE_SPACING_MULTIPLIER;
+    
+    // Debug log for zone heights (only log occasionally to avoid spam)
+    if (Math.random() < 0.01) { // Log 1% of the time
+      console.log('Zone heights:', {
+        canvasHeight: canvas.height,
+        playAreaHeight: playAreaHeight,
+        zoneHeight: zoneHeight,
+        isMobile: isMobile,
+        BASE_HEIGHT: BASE_HEIGHT
+      });
+    }
 
     // DEBUG: Remove any 'team' property from all playerHand cards
     for (let i = 0; i < playerHand.length; i++) {
