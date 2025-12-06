@@ -70,13 +70,15 @@
     #game-canvas { 
       background: #222; 
       border: none;
-      display: block; 
+      display: block !important; 
       margin: 0 auto;
       max-width: 100vw;
       max-height: 100vh;
       max-height: 100dvh; /* Use dynamic viewport height for mobile */
       width: auto;
       height: auto;
+      position: relative;
+      z-index: 1;
       /* Use smooth rendering for better visual quality */
       image-rendering: auto;
       image-rendering: -webkit-optimize-contrast;
@@ -86,12 +88,15 @@
     @media (max-width: 768px) {
       #game-canvas {
         border: none;
+        display: block !important;
         /* Smooth scaling on mobile for better clarity */
         image-rendering: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         /* Ensure canvas is centered and has proper spacing */
         box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+        position: relative;
+        z-index: 1;
       }
       #game-container {
         /* Add safe area padding for notched devices */
@@ -99,11 +104,13 @@
         /* Ensure proper centering on mobile */
         align-items: center;
         justify-content: center;
+        overflow: visible;
       }
       body {
         /* Prevent address bar from affecting layout */
         height: 100vh;
         height: 100dvh;
+        overflow: hidden;
       }
     }
     /* Prevent text selection on mobile */

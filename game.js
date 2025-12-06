@@ -28,7 +28,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Store scale factor globally for touch coordinate conversion
   let currentScale = 1;
-  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Enhanced mobile detection: check both user agent and screen size
+  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                 (window.innerWidth <= 768 || (window.screen && window.screen.width <= 768));
+  
+  console.log('Mobile detection:', {
+    userAgent: navigator.userAgent,
+    screenWidth: window.screen ? window.screen.width : 'unknown',
+    innerWidth: window.innerWidth,
+    isMobile: isMobile
+  });
 
   // Mobile-specific sizing constants
   const CARD_WIDTH = isMobile ? 70 : 50;
@@ -44,12 +53,24 @@ document.addEventListener('DOMContentLoaded', function() {
   function resizeCanvas() {
     const container = gameContainer;
     // Use actual viewport dimensions, accounting for mobile browser UI
-    const containerWidth = window.innerWidth || container.clientWidth;
-    const containerHeight = window.innerHeight || container.clientHeight;
+    // On mobile, use the larger of innerHeight or clientHeight to account for browser UI
+    let containerWidth = window.innerWidth || container.clientWidth || document.documentElement.clientWidth;
+    let containerHeight = window.innerHeight || container.clientHeight || document.documentElement.clientHeight;
+    
+    // On mobile, try to get the most accurate viewport height
+    if (isMobile) {
+      // Use visual viewport if available (better for mobile browsers)
+      if (window.visualViewport) {
+        containerWidth = window.visualViewport.width;
+        containerHeight = window.visualViewport.height;
+      }
+      // Fallback: use the maximum available height
+      containerHeight = Math.max(containerHeight, window.innerHeight || 0);
+    }
     
     if (isMobile) {
-      // Mobile: Add padding for better visual spacing and readability
-      const mobilePadding = 10; // Padding on all sides in pixels
+      // Mobile: Scale to fit the entire viewport, use minimal padding
+      const mobilePadding = 5; // Reduced padding to maximize space
       const availableWidth = containerWidth - (mobilePadding * 2);
       const availableHeight = containerHeight - (mobilePadding * 2);
       
@@ -66,13 +87,15 @@ document.addEventListener('DOMContentLoaded', function() {
       canvas.style.width = displayWidth + 'px';
       canvas.style.height = displayHeight + 'px';
       canvas.style.margin = `${mobilePadding}px auto`;
+      canvas.style.display = 'block'; // Ensure canvas is visible
       
       console.log('Canvas resized (mobile):', {
         display: `${displayWidth.toFixed(0)} x ${displayHeight.toFixed(0)}`,
         logical: `${canvas.width} x ${canvas.height}`,
         scale: scale.toFixed(3),
         viewport: `${containerWidth} x ${containerHeight}`,
-        padding: mobilePadding
+        padding: mobilePadding,
+        isMobile: isMobile
       });
     } else {
       // Desktop: Maintain aspect ratio, don't scale beyond 1:1
@@ -95,6 +118,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Keep internal resolution at base size for crisp rendering
     // The canvas will be scaled by CSS
+    // Force a redraw after resize
+    if (typeof drawBoard === 'function') {
+      drawBoard();
+    }
   }
 
   // Initial resize
@@ -105,6 +132,12 @@ document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('orientationchange', () => {
     setTimeout(resizeCanvas, 100); // Delay for orientation change to complete
   });
+  
+  // On mobile, also listen to visualViewport changes for better accuracy
+  if (isMobile && window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resizeCanvas);
+    window.visualViewport.addEventListener('scroll', resizeCanvas);
+  }
 
   console.log('Canvas dimensions:', canvas.width, canvas.height);
   console.log('Game container:', gameContainer);
@@ -2743,7 +2776,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function drawBoard() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const sectionWidth = canvas.width / SECTIONS;
-    const playAreaHeight = canvas.height - HAND_AREA_HEIGHT - HEADER_HEIGHT;
+    const headerHeight = HEADER_HEIGHT; // Use mobile-aware constant
+    const playAreaHeight = canvas.height - HAND_AREA_HEIGHT - headerHeight;
     const zoneHeight = (playAreaHeight / ZONES) * ZONE_SPACING_MULTIPLIER;
 
     // DEBUG: Remove any 'team' property from all playerHand cards
@@ -2835,7 +2869,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const isMultiSelected = selectedTargets.some(t => t.side === side && t.zone === zone && t.section === section);
 
             // Adjust y position to account for header
-            const pos = getCharacterPosition(side, zone, section, headerHeight);
+            const pos = getCharacterPosition(side, zone, section, HEADER_HEIGHT);
             drawCard(pos.x, pos.y, card, isSelectedOnBoard || isMultiSelected);
           }
         }
