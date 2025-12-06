@@ -30,6 +30,16 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentScale = 1;
   let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+  // Mobile-specific sizing constants
+  const CARD_WIDTH = isMobile ? 70 : 50;
+  const CARD_HEIGHT = isMobile ? 98 : 70; // Maintain 5:7 aspect ratio
+  const CARD_SPACING = isMobile ? 75 : 60; // Spacing between hand cards
+  const HAND_AREA_HEIGHT = isMobile ? 120 : 100; // Height reserved for hand area
+  const HEADER_HEIGHT = isMobile ? 50 : 40; // Header height
+  const ZONE_SPACING_MULTIPLIER = isMobile ? 0.85 : 1.0; // Reduce spacing between zones on mobile
+  const BUTTON_PADDING = isMobile ? '16px 32px' : '10px 20px';
+  const BUTTON_FONT_SIZE = isMobile ? '20px' : '16px';
+
   // Responsive canvas scaling function
   function resizeCanvas() {
     const container = gameContainer;
@@ -730,17 +740,22 @@ document.addEventListener('DOMContentLoaded', function() {
   const startButton = document.createElement('button');
   startButton.textContent = 'Start Turn';
   startButton.style.position = 'absolute';
-  startButton.style.right = '20px';
+  startButton.style.right = isMobile ? '10px' : '20px';
   startButton.style.top = '50%';
   startButton.style.transform = 'translateY(-50%)';
-  startButton.style.padding = '10px 20px';
-  startButton.style.fontSize = '16px';
+  startButton.style.padding = BUTTON_PADDING;
+  startButton.style.fontSize = BUTTON_FONT_SIZE;
   startButton.style.backgroundColor = '#4CAF50';
   startButton.style.color = 'white';
   startButton.style.border = 'none';
-  startButton.style.borderRadius = '5px';
+  startButton.style.borderRadius = isMobile ? '8px' : '5px';
   startButton.style.cursor = 'pointer';
   startButton.style.zIndex = '1000';
+  startButton.style.fontWeight = 'bold';
+  if (isMobile) {
+    startButton.style.minWidth = '120px';
+    startButton.style.minHeight = '48px';
+  }
   gameContainer.appendChild(startButton);
 
   // Place initial players on the board
@@ -1034,21 +1049,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (gameMode === 'pvp' && !isPlayerTurn) return;
     const sectionWidth = canvas.width / SECTIONS;
-    const playAreaHeight = canvas.height - 100;
-    const zoneHeight = playAreaHeight / ZONES;
+    const playAreaHeight = canvas.height - HAND_AREA_HEIGHT;
+    const baseZoneHeight = playAreaHeight / ZONES;
     for (let side = 0; side < SIDES; side++) {
       for (let zone = 0; zone < ZONES; zone++) {
         for (let section = 0; section < SECTIONS; section++) {
           const card = board[side][zone][section];
           if (card) {
-            const cardX = section * sectionWidth + sectionWidth / 2 - 25;
-            // Clamp Y so clickable area is always within play area
-            const headerHeight = 40;
-            const minY = headerHeight + 2;
-            const maxY = canvas.height - 100 - 2 - 70; // 70 is card height
-            let cardY = zone * zoneHeight + zoneHeight / 2 - 35 + headerHeight;
-            cardY = Math.max(minY, Math.min(cardY, maxY));
-            if (x >= cardX && x <= cardX + 50 && y >= cardY && y <= cardY + 70) {
+            const pos = getCharacterPosition(side, zone, section, HEADER_HEIGHT);
+            const cardX = pos.x;
+            const cardY = pos.y;
+            if (x >= cardX && x <= cardX + CARD_WIDTH && y >= cardY && y <= cardY + CARD_HEIGHT) {
               handleCharacterClick(side, zone, section);
               return;
             }
@@ -1058,16 +1069,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // Only check for hand card clicks if a character is selected
     if (selectedCharacter || (selectedCard && (selectedCard.type === CARD_TYPES.DOUBLE_BLAST || selectedCard.type === CARD_TYPES.TRIPLE_BLAST))) {
-      const cardSpacing = 60;
       const visibleWidth = canvas.width - 80;
-      const maxVisible = Math.floor(visibleWidth / cardSpacing);
+      const maxVisible = Math.floor(visibleWidth / CARD_SPACING);
       const handX = 40;
-      const handY = canvas.height - 70;
+      const handY = canvas.height - CARD_HEIGHT - 10;
       for (let i = 0; i < maxVisible; i++) {
         const cardIndex = handScrollOffset + i;
         if (cardIndex >= hand.length) break;
-        const cardX = handX + i * cardSpacing;
-      if (x >= cardX && x <= cardX + 50 && y >= handY && y <= handY + 70) {
+        const cardX = handX + i * CARD_SPACING;
+      if (x >= cardX && x <= cardX + CARD_WIDTH && y >= handY && y <= handY + CARD_HEIGHT) {
           handleCardClick(cardIndex);
         return;
       }
@@ -1092,17 +1102,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check if hovering over a hand card
     const hand = gameMode === 'pvp' ? (isPlayerTurn ? playerHand : player2Hand) : playerHand;
-    const cardSpacing = 60;
     const visibleWidth = canvas.width - 80;
-    const maxVisible = Math.floor(visibleWidth / cardSpacing);
+    const maxVisible = Math.floor(visibleWidth / CARD_SPACING);
     const handX = 40;
-    const handY = canvas.height - 70;
+    const handY = canvas.height - CARD_HEIGHT - 10;
     
     for (let i = 0; i < maxVisible; i++) {
       const cardIndex = handScrollOffset + i;
       if (cardIndex >= hand.length) break;
-      const cardX = handX + i * cardSpacing;
-      if (x >= cardX && x <= cardX + 50 && y >= handY && y <= handY + 70) {
+      const cardX = handX + i * CARD_SPACING;
+      if (x >= cardX && x <= cardX + CARD_WIDTH && y >= handY && y <= handY + CARD_HEIGHT) {
         const card = hand[cardIndex];
         if (card && CARD_DESCRIPTIONS[card.type]) {
           showTooltip(canvas, CARD_DESCRIPTIONS[card.type], event.pageX + 10, event.pageY - 10);
@@ -2734,9 +2743,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function drawBoard() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const sectionWidth = canvas.width / SECTIONS;
-    const headerHeight = 40; // Reduced header height since we removed the title
-    const playAreaHeight = canvas.height - 100 - headerHeight;
-    const zoneHeight = playAreaHeight / ZONES;
+    const playAreaHeight = canvas.height - HAND_AREA_HEIGHT - HEADER_HEIGHT;
+    const zoneHeight = (playAreaHeight / ZONES) * ZONE_SPACING_MULTIPLIER;
 
     // DEBUG: Remove any 'team' property from all playerHand cards
     for (let i = 0; i < playerHand.length; i++) {
@@ -2747,8 +2755,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw turn indicator
     ctx.save();
-    ctx.font = 'bold 24px Arial';
+    ctx.font = isMobile ? 'bold 28px Arial' : 'bold 24px Arial';
     ctx.textAlign = 'center';
+    const turnIndicatorY = isMobile ? 30 : 35;
     if (!firstTurn) {  // Only show turn indicator after game has started
       let turnText, color, shadow;
       if (gameMode === 'pvp') {
@@ -2761,25 +2770,26 @@ document.addEventListener('DOMContentLoaded', function() {
         shadow = color;
       }
       ctx.fillStyle = color;
-      ctx.fillText(turnText, canvas.width / 2, 35);
+      ctx.fillText(turnText, canvas.width / 2, turnIndicatorY);
       ctx.shadowColor = shadow;
       ctx.shadowBlur = 10;
-      ctx.fillText(turnText, canvas.width / 2, 35);
+      ctx.fillText(turnText, canvas.width / 2, turnIndicatorY);
     }
     ctx.restore();
 
     // Draw Turn Counter
     ctx.save();
-    ctx.font = 'bold 20px Arial';
+    ctx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'right';
     const turnCounterText = `Turn: ${playerTurns} / ${MAX_TURNS}`;
-    ctx.fillText(turnCounterText, canvas.width - 20, 35);
+    ctx.fillText(turnCounterText, canvas.width - 20, turnIndicatorY);
     ctx.restore();
 
     // Draw horizontal lines for zones, starting below header
+    const baseZoneHeight = playAreaHeight / ZONES;
     for (let i = 1; i < ZONES; i++) {
-      const y = headerHeight + (zoneHeight * i);
+      const y = HEADER_HEIGHT + (baseZoneHeight * i);
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(canvas.width, y);
@@ -2790,16 +2800,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw a line to separate the header from play area
     ctx.beginPath();
-    ctx.moveTo(0, headerHeight);
-    ctx.lineTo(canvas.width, headerHeight);
+    ctx.moveTo(0, HEADER_HEIGHT);
+    ctx.lineTo(canvas.width, HEADER_HEIGHT);
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.stroke();
 
     // Draw a line to separate the hand zone at the bottom
+    const handAreaTop = canvas.height - HAND_AREA_HEIGHT;
     ctx.beginPath();
-    ctx.moveTo(0, canvas.height - 100);
-    ctx.lineTo(canvas.width, canvas.height - 100);
+    ctx.moveTo(0, handAreaTop);
+    ctx.lineTo(canvas.width, handAreaTop);
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -2807,7 +2818,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Shade the bottom zone (hand area) light grey
     ctx.save();
     ctx.fillStyle = '#e0e0e0';
-    ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+    ctx.fillRect(0, handAreaTop, canvas.width, HAND_AREA_HEIGHT);
     ctx.restore();
 
     // Draw cards in slots (play area only)
@@ -2834,7 +2845,7 @@ document.addEventListener('DOMContentLoaded', function() {
     drawMovingCharacters();
     // Draw player hand in the new bottom zone
     const handX = 40;
-    const handY = canvas.height - 70;
+    const handY = canvas.height - CARD_HEIGHT - 10;
     // Only show the player's hand in PvAI mode; in PvP, show the correct hand
     if (gameMode === 'pvp') {
       drawHand(isPlayerTurn ? playerHand : player2Hand, handX, handY);
@@ -2953,16 +2964,16 @@ document.addEventListener('DOMContentLoaded', function() {
       // Draw blue triangle (top-left to bottom-right)
       useCtx.beginPath();
       useCtx.moveTo(x, y);
-      useCtx.lineTo(x + 50, y);
-      useCtx.lineTo(x + 50, y + 70);
+      useCtx.lineTo(x + CARD_WIDTH, y);
+      useCtx.lineTo(x + CARD_WIDTH, y + CARD_HEIGHT);
       useCtx.closePath();
       useCtx.fillStyle = '#4444ff';
       useCtx.fill();
       // Draw red triangle (bottom-left to top-right)
       useCtx.beginPath();
       useCtx.moveTo(x, y);
-      useCtx.lineTo(x, y + 70);
-      useCtx.lineTo(x + 50, y + 70);
+      useCtx.lineTo(x, y + CARD_HEIGHT);
+      useCtx.lineTo(x + CARD_WIDTH, y + CARD_HEIGHT);
       useCtx.closePath();
       useCtx.fillStyle = '#ff4444';
       useCtx.fill();
@@ -2976,22 +2987,22 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
 
       // Draw only the numbers, styled like Taunt
       useCtx.fillStyle = '#fff'; // White text
-      useCtx.font = 'bold 28px Arial'; // Match Taunt
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText(`${card.attackValue}/${card.defenseValue}`, x + 25, y + 40);
+      useCtx.fillText(`${card.attackValue}/${card.defenseValue}`, x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.DOUBLE_BLAST) {
       useCtx.save();
       // Red box
       useCtx.fillStyle = '#ff4444'; // Red for attack
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       // Black line
       useCtx.fillStyle = '#000';
-      useCtx.fillRect(x + 24, y, 2, 70);
+      useCtx.fillRect(x + CARD_WIDTH / 2 - 1, y, 2, CARD_HEIGHT);
       
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700'; // Gold for selected
@@ -3002,24 +3013,24 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
 
       // Draw '3's, styled like split cards
       useCtx.fillStyle = '#fff';
-      useCtx.font = 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('3', x + 12, y + 40);
-      useCtx.fillText('3', x + 38, y + 40);
+      useCtx.fillText('3', x + CARD_WIDTH / 4, y + CARD_HEIGHT / 2);
+      useCtx.fillText('3', x + CARD_WIDTH * 3 / 4, y + CARD_HEIGHT / 2);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.TRIPLE_BLAST) {
       useCtx.save();
       // Red box
       useCtx.fillStyle = '#ff4444'; // Red for attack
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       // Two Black lines
       useCtx.fillStyle = '#000';
-      useCtx.fillRect(x + 16, y, 2, 70);
-      useCtx.fillRect(x + 32, y, 2, 70);
+      useCtx.fillRect(x + CARD_WIDTH / 3 - 1, y, 2, CARD_HEIGHT);
+      useCtx.fillRect(x + CARD_WIDTH * 2 / 3 - 1, y, 2, CARD_HEIGHT);
       
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700'; // Gold for selected
@@ -3030,21 +3041,21 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
 
       // Draw '2's, styled like split cards
       useCtx.fillStyle = '#fff';
-      useCtx.font = 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('2', x + 8, y + 40);
-      useCtx.fillText('2', x + 25, y + 40);
-      useCtx.fillText('2', x + 42, y + 40);
+      useCtx.fillText('2', x + CARD_WIDTH / 6, y + CARD_HEIGHT / 2);
+      useCtx.fillText('2', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
+      useCtx.fillText('2', x + CARD_WIDTH * 5 / 6, y + CARD_HEIGHT / 2);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.TAUNT) {
       useCtx.save();
       // Black box (match Fortify)
       useCtx.fillStyle = '#111';
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700'; // Gold for selected
@@ -3055,32 +3066,32 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
 
       // Draw card info
       useCtx.fillStyle = '#00FF00'; // Green text (match Fortify)
-      useCtx.font = 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('+5', x + 25, y + 40); // Match Fortify/Counter Assault vertical position
+      useCtx.fillText('+5', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2); // Match Fortify/Counter Assault vertical position
       
-      drawTargetIcon(useCtx, x + 25, y + 60, 8);
+      drawTargetIcon(useCtx, x + CARD_WIDTH / 2, y + CARD_HEIGHT - 10, isMobile ? 10 : 8);
 
       useCtx.restore();
     } else if (card.type === CARD_TYPES.OVERBLAST) {
       useCtx.save();
       // Draw black triangle (bottom left to top right)
       useCtx.beginPath();
-      useCtx.moveTo(x, y + 70); // bottom left
-      useCtx.lineTo(x + 50, y); // top right
-      useCtx.lineTo(x + 50, y + 70); // bottom right
+      useCtx.moveTo(x, y + CARD_HEIGHT); // bottom left
+      useCtx.lineTo(x + CARD_WIDTH, y); // top right
+      useCtx.lineTo(x + CARD_WIDTH, y + CARD_HEIGHT); // bottom right
       useCtx.closePath();
       useCtx.fillStyle = '#000000'; // Black
       useCtx.fill();
       // Draw white triangle (top left to bottom right)
       useCtx.beginPath();
       useCtx.moveTo(x, y); // top left
-      useCtx.lineTo(x, y + 70); // bottom left
-      useCtx.lineTo(x + 50, y); // top right
+      useCtx.lineTo(x, y + CARD_HEIGHT); // bottom left
+      useCtx.lineTo(x + CARD_WIDTH, y); // top right
       useCtx.closePath();
       useCtx.fillStyle = '#ffffff'; // White
       useCtx.fill();
@@ -3094,39 +3105,40 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#888'; // Grey border to be visible on white
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
 
       // Draw card info: 50 on top, -? on bottom (match Endeavor)
       useCtx.fillStyle = '#ff4444'; // Red text
-      useCtx.font = 'bold 20px Arial';
+      useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('50', x + 25, y + 20);
-      useCtx.fillText('-?', x + 25, y + 62);
+      useCtx.fillText('50', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.25);
+      useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.85);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.FORTIFY) {
       useCtx.save();
       useCtx.fillStyle = '#111'; // Black
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.fillStyle = '#00FF00';
-      useCtx.font = 'bold 28px Arial';
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('+10', x + 25, y + 40);
-      // Draw two centered taunt icons at the bottom (y+60)
-      drawTargetIcon(useCtx, x + 16, y + 60, 8);
-      drawTargetIcon(useCtx, x + 34, y + 60, 8);
+      useCtx.fillText('+10', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
+      // Draw two centered taunt icons at the bottom
+      const iconSize = isMobile ? 10 : 8;
+      drawTargetIcon(useCtx, x + CARD_WIDTH / 3, y + CARD_HEIGHT - 10, iconSize);
+      drawTargetIcon(useCtx, x + CARD_WIDTH * 2 / 3, y + CARD_HEIGHT - 10, iconSize);
       useCtx.strokeStyle = '#00FF00';
       useCtx.lineWidth = 2;
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.COUNTER) {
       useCtx.save();
       // Draw card rectangle background (red)
       useCtx.fillStyle = '#ff4444';
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       // Draw smaller yin-yang symbol centered in the card
-      const centerX = x + 25;
-      const centerY = y + 35;
-      const radius = 25; // Large enough to touch card edges
+      const centerX = x + CARD_WIDTH / 2;
+      const centerY = y + CARD_HEIGHT / 2;
+      const radius = Math.min(CARD_WIDTH, CARD_HEIGHT) / 2; // Large enough to touch card edges
       // Top half (white)
       useCtx.beginPath();
       useCtx.arc(centerX, centerY, radius, 0, Math.PI, false);
@@ -3149,9 +3161,9 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.fill();
       // Blue '+?' text
       useCtx.fillStyle = '#3399ff';
-      useCtx.font = 'bold 32px Arial'; // Match Counter Assault
+      useCtx.font = isMobile ? 'bold 40px Arial' : 'bold 32px Arial'; // Match Counter Assault
       useCtx.textAlign = 'center';
-      useCtx.fillText('+?', centerX, y + 40);
+      useCtx.fillText('+?', centerX, y + CARD_HEIGHT / 2);
       // Counter icon: two arrows circling each other (simple version)
       useCtx.save();
       useCtx.translate(centerX, y + 60);
@@ -3180,30 +3192,31 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.save();
       // Black card background (was white)
       useCtx.fillStyle = '#000';
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
 
       // Large, very thick black lightning bolt (centered, top to bottom)
       useCtx.save();
       useCtx.strokeStyle = '#000';
-      useCtx.lineWidth = 10;
+      useCtx.lineWidth = isMobile ? 14 : 10;
       useCtx.shadowColor = 'rgba(0,0,0,0.2)';
       useCtx.shadowBlur = 6;
       useCtx.beginPath();
-      useCtx.moveTo(x + 25, y + 2);   // Top center
-      useCtx.lineTo(x + 35, y + 28);  // Down right
-      useCtx.lineTo(x + 28, y + 28);  // In left
-      useCtx.lineTo(x + 38, y + 50);  // Down right
-      useCtx.lineTo(x + 22, y + 38);  // Up left
-      useCtx.lineTo(x + 30, y + 38);  // Down right
-      useCtx.lineTo(x + 20, y + 68);  // Bottom
+      const centerX = x + CARD_WIDTH / 2;
+      useCtx.moveTo(centerX, y + 2);   // Top center
+      useCtx.lineTo(centerX + CARD_WIDTH * 0.14, y + CARD_HEIGHT * 0.4);  // Down right
+      useCtx.lineTo(centerX + CARD_WIDTH * 0.04, y + CARD_HEIGHT * 0.4);  // In left
+      useCtx.lineTo(centerX + CARD_WIDTH * 0.18, y + CARD_HEIGHT * 0.71);  // Down right
+      useCtx.lineTo(centerX - CARD_WIDTH * 0.04, y + CARD_HEIGHT * 0.54);  // Up left
+      useCtx.lineTo(centerX + CARD_WIDTH * 0.07, y + CARD_HEIGHT * 0.54);  // Down right
+      useCtx.lineTo(centerX - CARD_WIDTH * 0.07, y + CARD_HEIGHT - 2);  // Bottom
       useCtx.stroke();
       useCtx.restore();
 
       // Red '5' text
       useCtx.fillStyle = '#ff4444';
-      useCtx.font = 'bold 28px Arial'; // Match Fortify and Taunt
+      useCtx.font = isMobile ? 'bold 36px Arial' : 'bold 28px Arial'; // Match Fortify and Taunt
       useCtx.textAlign = 'center';
-      useCtx.fillText('5', x + 25, y + 40);
+      useCtx.fillText('5', centerX, y + CARD_HEIGHT / 2);
 
       // Draw small agility icon at the bottom center (like other card icons)
       useCtx.save();
@@ -3211,13 +3224,14 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.lineWidth = 2.5;
       useCtx.shadowColor = '#ffcc00';
       useCtx.shadowBlur = 4;
-      const iconX = x + 25;
-      const iconY = y + 60;
+      const iconX = centerX;
+      const iconY = y + CARD_HEIGHT - 10;
+      const iconSize = isMobile ? 10 : 7;
       useCtx.beginPath();
-      useCtx.moveTo(iconX - 7, iconY - 6);
+      useCtx.moveTo(iconX - iconSize, iconY - 6);
       useCtx.lineTo(iconX + 2, iconY + 2);
       useCtx.lineTo(iconX - 2, iconY + 2);
-      useCtx.lineTo(iconX + 6, iconY + 12);
+      useCtx.lineTo(iconX + iconSize + 1, iconY + 12);
       useCtx.stroke();
       useCtx.restore();
 
@@ -3231,27 +3245,27 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.SACRIFICE) {
       useCtx.save();
       // White chevron on black background (reverse V pattern)
       useCtx.fillStyle = '#000';
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.fillStyle = '#fff';
       useCtx.beginPath();
-      useCtx.moveTo(x, y + 70);
-      useCtx.lineTo(x + 25, y + 20);
-      useCtx.lineTo(x + 50, y + 70);
+      useCtx.moveTo(x, y + CARD_HEIGHT);
+      useCtx.lineTo(x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.29);
+      useCtx.lineTo(x + CARD_WIDTH, y + CARD_HEIGHT);
       useCtx.closePath();
       useCtx.fill();
       // Green text
       useCtx.fillStyle = '#44ff44';
-      useCtx.font = 'bold 20px Arial';
+      useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('-?/5-5', x + 25, y + 40);
+      useCtx.fillText('-?/5-5', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
       // Draw taunt icon
-      drawTargetIcon(useCtx, x + 25, y + 60, 8);
+      drawTargetIcon(useCtx, x + CARD_WIDTH / 2, y + CARD_HEIGHT - 10, isMobile ? 10 : 8);
       // Highlight logic
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700';
@@ -3262,39 +3276,40 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.COUNTER_ASSAULT) {
       useCtx.save();
       // Left half black, right half white
       useCtx.beginPath();
       useCtx.moveTo(x, y);
-      useCtx.lineTo(x + 25, y);
-      useCtx.lineTo(x + 25, y + 70);
-      useCtx.lineTo(x, y + 70);
+      useCtx.lineTo(x + CARD_WIDTH / 2, y);
+      useCtx.lineTo(x + CARD_WIDTH / 2, y + CARD_HEIGHT);
+      useCtx.lineTo(x, y + CARD_HEIGHT);
       useCtx.closePath();
       useCtx.fillStyle = '#111';
       useCtx.fill();
       useCtx.beginPath();
-      useCtx.moveTo(x + 25, y);
-      useCtx.lineTo(x + 50, y);
-      useCtx.lineTo(x + 50, y + 70);
-      useCtx.lineTo(x + 25, y + 70);
+      useCtx.moveTo(x + CARD_WIDTH / 2, y);
+      useCtx.lineTo(x + CARD_WIDTH, y);
+      useCtx.lineTo(x + CARD_WIDTH, y + CARD_HEIGHT);
+      useCtx.lineTo(x + CARD_WIDTH / 2, y + CARD_HEIGHT);
       useCtx.closePath();
       useCtx.fillStyle = '#fff';
       useCtx.fill();
       // Blue -? text
       useCtx.fillStyle = '#3399ff';
-      useCtx.font = 'bold 32px Arial';
+      useCtx.font = isMobile ? 'bold 40px Arial' : 'bold 32px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('-?', x + 25, y + 40);
+      useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
       // Two counter icons (bottom left and bottom right)
+      const iconSize = isMobile ? 10 : 8;
       // Left icon
       useCtx.save();
-      useCtx.translate(x + 10, y + 60);
+      useCtx.translate(x + CARD_WIDTH / 4, y + CARD_HEIGHT - 10);
       useCtx.rotate(-Math.PI / 4);
       useCtx.beginPath();
-      useCtx.arc(0, 0, 8, 0, Math.PI * 1.5, false);
+      useCtx.arc(0, 0, iconSize, 0, Math.PI * 1.5, false);
       useCtx.strokeStyle = '#3399ff';
       useCtx.lineWidth = 2;
       useCtx.stroke();
@@ -3304,7 +3319,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.lineTo(5, -1);
       useCtx.stroke();
       useCtx.beginPath();
-      useCtx.arc(0, 0, 8, Math.PI, Math.PI * 2.5, false);
+      useCtx.arc(0, 0, iconSize, Math.PI, Math.PI * 2.5, false);
       useCtx.stroke();
       useCtx.beginPath();
       useCtx.moveTo(-5, 5);
@@ -3314,10 +3329,10 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.restore();
       // Right icon
       useCtx.save();
-      useCtx.translate(x + 40, y + 60);
+      useCtx.translate(x + CARD_WIDTH * 3 / 4, y + CARD_HEIGHT - 10);
       useCtx.rotate(-Math.PI / 4);
       useCtx.beginPath();
-      useCtx.arc(0, 0, 8, 0, Math.PI * 1.5, false);
+      useCtx.arc(0, 0, iconSize, 0, Math.PI * 1.5, false);
       useCtx.strokeStyle = '#3399ff';
       useCtx.lineWidth = 2;
       useCtx.stroke();
@@ -3327,7 +3342,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.lineTo(5, -1);
       useCtx.stroke();
       useCtx.beginPath();
-      useCtx.arc(0, 0, 8, Math.PI, Math.PI * 2.5, false);
+      useCtx.arc(0, 0, iconSize, Math.PI, Math.PI * 2.5, false);
       useCtx.stroke();
       useCtx.beginPath();
       useCtx.moveTo(-5, 5);
@@ -3336,7 +3351,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.stroke();
       useCtx.restore();
       // Taunt icon (center bottom)
-      drawTargetIcon(useCtx, x + 25, y + 60, 8);
+      drawTargetIcon(useCtx, x + CARD_WIDTH / 2, y + CARD_HEIGHT - 10, iconSize);
       // Highlight logic
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700';
@@ -3347,23 +3362,23 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.ENDEAVOR) {
       useCtx.save();
       // White card background
       useCtx.fillStyle = '#fff';
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       // Draw two black rectangles (equal sign)
       useCtx.fillStyle = '#111';
-      useCtx.fillRect(x + 10, y + 28, 30, 6);
-      useCtx.fillRect(x + 10, y + 38, 30, 6);
+      useCtx.fillRect(x + CARD_WIDTH * 0.2, y + CARD_HEIGHT * 0.4, CARD_WIDTH * 0.6, CARD_HEIGHT * 0.086);
+      useCtx.fillRect(x + CARD_WIDTH * 0.2, y + CARD_HEIGHT * 0.54, CARD_WIDTH * 0.6, CARD_HEIGHT * 0.086);
       // Red -? at top and bottom
       useCtx.fillStyle = '#ff4444';
-      useCtx.font = 'bold 20px Arial';
+      useCtx.font = isMobile ? 'bold 24px Arial' : 'bold 20px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('-?', x + 25, y + 20);
-      useCtx.fillText('-?', x + 25, y + 62);
+      useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.29);
+      useCtx.fillText('-?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.89);
       // Highlight logic
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700';
@@ -3374,23 +3389,23 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.restore();
     } else if (card.type === CARD_TYPES.EQUALIZE) {
       useCtx.save();
       // Black card background
       useCtx.fillStyle = '#111';
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       // Draw two white rectangles (equal sign)
       useCtx.fillStyle = '#fff';
-      useCtx.fillRect(x + 10, y + 28, 30, 6);
-      useCtx.fillRect(x + 10, y + 38, 30, 6);
+      useCtx.fillRect(x + CARD_WIDTH * 0.2, y + CARD_HEIGHT * 0.4, CARD_WIDTH * 0.6, CARD_HEIGHT * 0.086);
+      useCtx.fillRect(x + CARD_WIDTH * 0.2, y + CARD_HEIGHT * 0.54, CARD_WIDTH * 0.6, CARD_HEIGHT * 0.086);
       // Red -? | -? at top and bottom
       useCtx.fillStyle = '#ff4444';
-      useCtx.font = 'bold 18px Arial';
+      useCtx.font = isMobile ? 'bold 22px Arial' : 'bold 18px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText('-? | -?', x + 25, y + 20);
-      useCtx.fillText('-? | -?', x + 25, y + 62);
+      useCtx.fillText('-? | -?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.29);
+      useCtx.fillText('-? | -?', x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.89);
       // Highlight logic
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700';
@@ -3401,7 +3416,7 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       useCtx.restore();
     } else {
       // Draw hand card as a box
@@ -3413,7 +3428,7 @@ document.addEventListener('DOMContentLoaded', function() {
       useCtx.save();
       // Draw card box
       useCtx.fillStyle = colors[card.type];
-      useCtx.fillRect(x, y, 50, 70);
+      useCtx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       
       if (isHandSelected) {
         useCtx.strokeStyle = '#FFD700'; // Gold for selected
@@ -3424,29 +3439,27 @@ document.addEventListener('DOMContentLoaded', function() {
         useCtx.strokeStyle = '#fff';
         useCtx.lineWidth = 1;
       }
-      useCtx.strokeRect(x, y, 50, 70);
+      useCtx.strokeRect(x, y, CARD_WIDTH, CARD_HEIGHT);
       
       // Draw card info
       useCtx.fillStyle = '#fff';
-      useCtx.font = '12px Arial';
+      useCtx.font = isMobile ? '16px Arial' : '12px Arial';
       useCtx.textAlign = 'center';
-      useCtx.fillText(card.type, x + 25, y + 25);
-      useCtx.fillText(card.value, x + 25, y + 45);
+      useCtx.fillText(card.type, x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.36);
+      useCtx.fillText(card.value, x + CARD_WIDTH / 2, y + CARD_HEIGHT * 0.64);
       useCtx.restore();
     }
   }
 
   function drawHand(hand, x, y) {
-    const cardWidth = 50;
-    const cardSpacing = 60;
     const visibleWidth = canvas.width - 80; // 40px margin on each side
-    const maxVisible = Math.floor(visibleWidth / cardSpacing);
+    const maxVisible = Math.floor(visibleWidth / CARD_SPACING);
 
     // Clamp scroll offset
     if (handScrollOffset < 0) handScrollOffset = 0;
     if (handScrollOffset > hand.length - maxVisible) handScrollOffset = Math.max(0, hand.length - maxVisible);
 
-    ctx.font = '16px Arial';
+    ctx.font = isMobile ? '20px Arial' : '16px Arial';
     ctx.fillStyle = '#000000';
     let handLabel = 'Your Hand:';
     if (typeof gameMode !== 'undefined' && gameMode === 'pvp') {
@@ -3459,32 +3472,36 @@ document.addEventListener('DOMContentLoaded', function() {
     for (let i = 0; i < hand.length; i++) {
       const drawIndex = i - handScrollOffset;
       if (drawIndex >= 0 && drawIndex < maxVisible) {
-        if (hand[i]) drawCard(x + drawIndex * cardSpacing, y, hand[i], false, i === selectedHandCardIndex);
+        if (hand[i]) drawCard(x + drawIndex * CARD_SPACING, y, hand[i], false, i === selectedHandCardIndex);
       }
     }
 
     // Draw scroll indicators as large clickable arrows if needed
+    const arrowSize = isMobile ? 50 : 40;
+    const arrowWidth = isMobile ? 45 : 35;
+    const arrowY = y + CARD_HEIGHT / 2;
     handLeftArrowBox = null;
     handRightArrowBox = null;
     if (handScrollOffset > 0) {
       ctx.fillStyle = '#888';
       ctx.beginPath();
-      ctx.moveTo(x - 35, y + 35);
-      ctx.lineTo(x - 5, y + 15);
-      ctx.lineTo(x - 5, y + 55);
+      ctx.moveTo(x - arrowWidth, arrowY);
+      ctx.lineTo(x - 5, arrowY - arrowSize / 2);
+      ctx.lineTo(x - 5, arrowY + arrowSize / 2);
       ctx.closePath();
       ctx.fill();
-      handLeftArrowBox = { x: x - 40, y: y + 15, w: 35, h: 40 };
+      handLeftArrowBox = { x: x - arrowWidth - 5, y: arrowY - arrowSize / 2, w: arrowWidth + 5, h: arrowSize };
     }
     if (handScrollOffset < hand.length - maxVisible) {
       ctx.fillStyle = '#888';
+      const rightX = x + maxVisible * CARD_SPACING;
       ctx.beginPath();
-      ctx.moveTo(x + maxVisible * cardSpacing + 35, y + 35);
-      ctx.lineTo(x + maxVisible * cardSpacing + 5, y + 15);
-      ctx.lineTo(x + maxVisible * cardSpacing + 5, y + 55);
+      ctx.moveTo(rightX + arrowWidth, arrowY);
+      ctx.lineTo(rightX + 5, arrowY - arrowSize / 2);
+      ctx.lineTo(rightX + 5, arrowY + arrowSize / 2);
       ctx.closePath();
       ctx.fill();
-      handRightArrowBox = { x: x + maxVisible * cardSpacing + 5, y: y + 15, w: 35, h: 40 };
+      handRightArrowBox = { x: rightX + 5, y: arrowY - arrowSize / 2, w: arrowWidth + 5, h: arrowSize };
     }
   }
 
@@ -3838,10 +3855,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Helper to get character draw position for 6 zones and 3 sections
   function getCharacterPosition(side, zone, section, headerHeight = 80) {
     const sectionWidth = canvas.width / SECTIONS;
-    const playAreaHeight = canvas.height - 100 - headerHeight;
-    const zoneHeight = playAreaHeight / ZONES;
-    const x = section * sectionWidth + sectionWidth / 2;
-    const y = headerHeight + (zone * zoneHeight + zoneHeight / 2);
+    const playAreaHeight = canvas.height - HAND_AREA_HEIGHT - headerHeight;
+    const baseZoneHeight = playAreaHeight / ZONES;
+    const zoneHeight = baseZoneHeight * ZONE_SPACING_MULTIPLIER;
+    const x = section * sectionWidth + sectionWidth / 2 - (CARD_WIDTH / 2);
+    const y = headerHeight + (zone * baseZoneHeight + baseZoneHeight / 2) - (CARD_HEIGHT / 2);
     return { x, y };
   }
 
