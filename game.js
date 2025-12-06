@@ -8,6 +8,18 @@ document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('game-canvas');
   const ctx = canvas.getContext('2d');
 
+  // Optimize canvas context for better rendering quality
+  if (ctx) {
+    // Enable better text rendering
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    // Improve rendering quality on high-DPI displays
+    if (window.devicePixelRatio > 1) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+    }
+  }
+
   // Base canvas dimensions (logical size)
   const BASE_WIDTH = 900;
   const BASE_HEIGHT = 700;
@@ -25,39 +37,54 @@ document.addEventListener('DOMContentLoaded', function() {
     const containerWidth = window.innerWidth || container.clientWidth;
     const containerHeight = window.innerHeight || container.clientHeight;
     
-    // Calculate scale to fit container while maintaining aspect ratio
-    const scaleX = containerWidth / BASE_WIDTH;
-    const scaleY = containerHeight / BASE_HEIGHT;
-    // On mobile, allow scaling up to fill screen better (use full available space)
-    const scale = isMobile ? Math.min(scaleX, scaleY) : Math.min(scaleX, scaleY, 1);
-    currentScale = scale;
-    
-    // Set display size (CSS) - fill available space on mobile
     if (isMobile) {
-      // On mobile, use the larger dimension to fill screen better
-      const useWidth = scaleX >= scaleY;
-      if (useWidth) {
-        canvas.style.width = containerWidth + 'px';
-        canvas.style.height = (BASE_HEIGHT * scaleX) + 'px';
-      } else {
-        canvas.style.width = (BASE_WIDTH * scaleY) + 'px';
-        canvas.style.height = containerHeight + 'px';
-      }
+      // Mobile: Add padding for better visual spacing and readability
+      const mobilePadding = 10; // Padding on all sides in pixels
+      const availableWidth = containerWidth - (mobilePadding * 2);
+      const availableHeight = containerHeight - (mobilePadding * 2);
+      
+      // Calculate scale to fit with padding while maintaining aspect ratio
+      const scaleX = availableWidth / BASE_WIDTH;
+      const scaleY = availableHeight / BASE_HEIGHT;
+      const scale = Math.min(scaleX, scaleY);
+      currentScale = scale;
+      
+      // Set display size with padding
+      const displayWidth = BASE_WIDTH * scale;
+      const displayHeight = BASE_HEIGHT * scale;
+      
+      canvas.style.width = displayWidth + 'px';
+      canvas.style.height = displayHeight + 'px';
+      canvas.style.margin = `${mobilePadding}px auto`;
+      
+      console.log('Canvas resized (mobile):', {
+        display: `${displayWidth.toFixed(0)} x ${displayHeight.toFixed(0)}`,
+        logical: `${canvas.width} x ${canvas.height}`,
+        scale: scale.toFixed(3),
+        viewport: `${containerWidth} x ${containerHeight}`,
+        padding: mobilePadding
+      });
     } else {
+      // Desktop: Maintain aspect ratio, don't scale beyond 1:1
+      const scaleX = containerWidth / BASE_WIDTH;
+      const scaleY = containerHeight / BASE_HEIGHT;
+      const scale = Math.min(scaleX, scaleY, 1);
+      currentScale = scale;
+      
       canvas.style.width = (BASE_WIDTH * scale) + 'px';
       canvas.style.height = (BASE_HEIGHT * scale) + 'px';
+      canvas.style.margin = '0 auto';
+      
+      console.log('Canvas resized (desktop):', {
+        display: `${(BASE_WIDTH * scale).toFixed(0)} x ${(BASE_HEIGHT * scale).toFixed(0)}`,
+        logical: `${canvas.width} x ${canvas.height}`,
+        scale: scale.toFixed(2),
+        viewport: `${containerWidth} x ${containerHeight}`
+      });
     }
     
     // Keep internal resolution at base size for crisp rendering
     // The canvas will be scaled by CSS
-    
-    console.log('Canvas resized:', {
-      display: `${canvas.style.width} x ${canvas.style.height}`,
-      logical: `${canvas.width} x ${canvas.height}`,
-      scale: scale.toFixed(2),
-      isMobile: isMobile,
-      viewport: `${containerWidth} x ${containerHeight}`
-    });
   }
 
   // Initial resize

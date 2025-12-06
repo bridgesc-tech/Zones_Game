@@ -64,10 +64,12 @@
       overflow: hidden;
       padding: 0;
       margin: 0;
+      /* Ensure proper centering on all devices */
+      box-sizing: border-box;
     }
     #game-canvas { 
       background: #222; 
-      border: none; /* Remove border on mobile for more space */
+      border: none;
       display: block; 
       margin: 0 auto;
       max-width: 100vw;
@@ -75,14 +77,28 @@
       max-height: 100dvh; /* Use dynamic viewport height for mobile */
       width: auto;
       height: auto;
+      /* Use smooth rendering for better visual quality */
+      image-rendering: auto;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
-      image-rendering: pixelated;
     }
     /* Mobile-specific optimizations */
     @media (max-width: 768px) {
       #game-canvas {
         border: none;
+        /* Smooth scaling on mobile for better clarity */
+        image-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        /* Ensure canvas is centered and has proper spacing */
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+      }
+      #game-container {
+        /* Add safe area padding for notched devices */
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        /* Ensure proper centering on mobile */
+        align-items: center;
+        justify-content: center;
       }
       body {
         /* Prevent address bar from affecting layout */
