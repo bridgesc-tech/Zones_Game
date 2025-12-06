@@ -1,4 +1,4 @@
-console.log("VERSION CHECK: 7");
+console.log("VERSION CHECK: 8");
 // Zones - Turn-Based Card Game
 
 // Wait for the DOM to be fully loaded
@@ -22,15 +22,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Base canvas dimensions (logical size)
   const BASE_WIDTH = 900;
-  const BASE_HEIGHT = 700;
+  // Enhanced mobile detection: check both user agent and screen size (needed before BASE_HEIGHT)
+  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                 (window.innerWidth <= 768 || (window.screen && window.screen.width <= 768));
+  // Use taller canvas on mobile to give zones more vertical space
+  const BASE_HEIGHT = isMobile ? 1100 : 700; // Increased height on mobile for better zone spacing
   canvas.width = BASE_WIDTH;
   canvas.height = BASE_HEIGHT;
 
   // Store scale factor globally for touch coordinate conversion
   let currentScale = 1;
-  // Enhanced mobile detection: check both user agent and screen size
-  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                 (window.innerWidth <= 768 || (window.screen && window.screen.width <= 768));
   
   console.log('Mobile detection:', {
     userAgent: navigator.userAgent,
