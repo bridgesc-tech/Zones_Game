@@ -3800,23 +3800,26 @@ document.addEventListener('DOMContentLoaded', function() {
   titleScreen.style.top = '0';
   titleScreen.style.left = '0';
   titleScreen.style.width = '100vw';
+  titleScreen.style.width = '100dvw'; // Use dynamic viewport width for mobile (overrides 100vw)
   titleScreen.style.height = '100vh';
+  titleScreen.style.height = '100dvh'; // Use dynamic viewport height for mobile (overrides 100vh)
   titleScreen.style.background = 'linear-gradient(180deg, #222 60%, #333 100%)';
   titleScreen.style.display = 'flex';
   titleScreen.style.flexDirection = 'column';
   titleScreen.style.justifyContent = 'center';
   titleScreen.style.alignItems = 'center';
   titleScreen.style.zIndex = '2000';
+  titleScreen.style.overflow = 'hidden';
 
   // Title
   const title = document.createElement('div');
   title.textContent = 'Zones';
   title.style.fontFamily = 'Arial Black, Arial, sans-serif';
-  title.style.fontSize = '72px';
-  title.style.letterSpacing = '8px';
+  title.style.fontSize = isMobile ? '48px' : '72px';
+  title.style.letterSpacing = isMobile ? '4px' : '8px';
   title.style.color = '#fff';
   title.style.textShadow = '0 0 24px #44ff44, 0 0 8px #000';
-  title.style.marginBottom = '60px';
+  title.style.marginBottom = isMobile ? '40px' : '60px';
   titleScreen.appendChild(title);
 
   // Button container
@@ -3831,15 +3834,18 @@ document.addEventListener('DOMContentLoaded', function() {
   newGameBtn.textContent = 'New Game';
   newGameBtn.style.background = '#4CAF50';
   newGameBtn.style.color = '#fff';
-  newGameBtn.style.fontSize = '32px';
+  newGameBtn.style.fontSize = isMobile ? '24px' : '32px';
   newGameBtn.style.fontWeight = 'bold';
-  newGameBtn.style.padding = '18px 60px';
+  newGameBtn.style.padding = isMobile ? '14px 40px' : '18px 60px';
   newGameBtn.style.border = 'none';
   newGameBtn.style.borderRadius = '12px';
   newGameBtn.style.cursor = 'pointer';
   newGameBtn.style.boxShadow = '0 4px 16px #222';
+  newGameBtn.style.touchAction = 'manipulation'; // Better touch handling on mobile
   newGameBtn.onmouseenter = () => newGameBtn.style.background = '#43a047';
   newGameBtn.onmouseleave = () => newGameBtn.style.background = '#4CAF50';
+  newGameBtn.ontouchstart = () => newGameBtn.style.background = '#43a047';
+  newGameBtn.ontouchend = () => newGameBtn.style.background = '#4CAF50';
   buttonContainer.appendChild(newGameBtn);
 
   // Deck Builder button
@@ -3847,15 +3853,18 @@ document.addEventListener('DOMContentLoaded', function() {
   deckBuilderBtn.textContent = 'Deck Builder';
   deckBuilderBtn.style.background = '#4CAF50';
   deckBuilderBtn.style.color = '#fff';
-  deckBuilderBtn.style.fontSize = '32px';
+  deckBuilderBtn.style.fontSize = isMobile ? '24px' : '32px';
   deckBuilderBtn.style.fontWeight = 'bold';
-  deckBuilderBtn.style.padding = '18px 60px';
+  deckBuilderBtn.style.padding = isMobile ? '14px 40px' : '18px 60px';
   deckBuilderBtn.style.border = 'none';
   deckBuilderBtn.style.borderRadius = '12px';
   deckBuilderBtn.style.cursor = 'pointer';
   deckBuilderBtn.style.boxShadow = '0 4px 16px #222';
+  deckBuilderBtn.style.touchAction = 'manipulation'; // Better touch handling on mobile
   deckBuilderBtn.onmouseenter = () => deckBuilderBtn.style.background = '#43a047';
   deckBuilderBtn.onmouseleave = () => deckBuilderBtn.style.background = '#4CAF50';
+  deckBuilderBtn.ontouchstart = () => deckBuilderBtn.style.background = '#43a047';
+  deckBuilderBtn.ontouchend = () => deckBuilderBtn.style.background = '#4CAF50';
   // Placeholder: no action yet
   buttonContainer.appendChild(deckBuilderBtn);
 
