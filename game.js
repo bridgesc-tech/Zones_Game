@@ -40,17 +40,17 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Mobile-specific sizing constants
-  const CARD_WIDTH = isMobile ? 85 : 50; // Bigger cards on mobile for better visibility
-  const CARD_HEIGHT = isMobile ? 119 : 70; // Maintain 5:7 aspect ratio, bigger on mobile
-  const CARD_SPACING = isMobile ? 90 : 60; // Spacing between hand cards
-  const HAND_AREA_HEIGHT = isMobile ? 140 : 100; // Bigger hand area on mobile for larger cards
-  const HEADER_HEIGHT = isMobile ? 35 : 40; // Reduced header height on mobile to give more space to board
+  const CARD_WIDTH = isMobile ? 100 : 50; // Even bigger cards on mobile to fill space
+  const CARD_HEIGHT = isMobile ? 140 : 70; // Maintain 5:7 aspect ratio, bigger on mobile
+  const CARD_SPACING = isMobile ? 105 : 60; // Spacing between hand cards
+  const HAND_AREA_HEIGHT = isMobile ? 160 : 100; // Bigger hand area on mobile for larger cards
+  const HEADER_HEIGHT = isMobile ? 25 : 40; // Further reduced header height on mobile to maximize board space
   const ZONE_SPACING_MULTIPLIER = isMobile ? 1.0 : 1.0; // Full spacing on mobile now that we have more room
   const BUTTON_PADDING = isMobile ? '16px 32px' : '10px 20px';
   const BUTTON_FONT_SIZE = isMobile ? '20px' : '16px';
   
-  // Character circle size - bigger on mobile
-  const CHARACTER_RADIUS = isMobile ? 35 : 25; // Bigger characters on mobile
+  // Character circle size - bigger on mobile to fill larger zones
+  const CHARACTER_RADIUS = isMobile ? 42 : 25; // Even bigger characters on mobile
   
   // Mobile-specific positioning adjustments (for better fit on small screens)
   const MOBILE_SIDE_PADDING = isMobile ? 5 : 0; // Small padding from left/right edges on mobile
@@ -2845,7 +2845,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ctx.save();
     ctx.font = isMobile ? 'bold 28px Arial' : 'bold 24px Arial';
     ctx.textAlign = 'center';
-    const turnIndicatorY = isMobile ? 30 : 35;
+    const turnIndicatorY = isMobile ? 55 : 35; // Moved down on mobile to be below help button (which is at 40px)
     if (!firstTurn) {  // Only show turn indicator after game has started
       let turnText, color, shadow;
       if (gameMode === 'pvp') {
@@ -2931,9 +2931,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // Draw moving characters on top
     drawMovingCharacters();
-    // Draw player hand in the new bottom zone
-    const handX = 40;
-    const handY = canvas.height - CARD_HEIGHT - 10;
+    // Draw player hand in the new bottom zone - closer to bottom on mobile
+    const handX = isMobile ? 20 : 40;
+    const handY = isMobile ? canvas.height - CARD_HEIGHT - 5 : canvas.height - CARD_HEIGHT - 10; // Almost at bottom on mobile
     // Only show the player's hand in PvAI mode; in PvP, show the correct hand
     if (gameMode === 'pvp') {
       drawHand(isPlayerTurn ? playerHand : player2Hand, handX, handY);
@@ -3781,7 +3781,7 @@ document.addEventListener('DOMContentLoaded', function() {
     helpButton.textContent = 'Help';
     helpButton.style.position = 'absolute';
     helpButton.style.left = isMobile ? '10px' : '20px';
-    helpButton.style.top = isMobile ? '45px' : '20px'; // Moved down on mobile to be below header
+    helpButton.style.top = isMobile ? '40px' : '20px'; // Positioned above turn indicator
     helpButton.style.padding = isMobile ? '12px 24px' : '10px 20px';
     helpButton.style.fontSize = isMobile ? '18px' : '16px';
     helpButton.style.backgroundColor = '#2196F3';
