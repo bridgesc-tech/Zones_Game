@@ -1,4 +1,4 @@
-console.log("VERSION CHECK: 5");
+console.log("VERSION CHECK: 6");
 // Zones - Turn-Based Card Game
 
 // Wait for the DOM to be fully loaded
